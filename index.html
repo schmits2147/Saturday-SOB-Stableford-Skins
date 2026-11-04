@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SOB Saturday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#F5F6F1;
+  --surface:#FFFFFF;
+  --ink:#1B2620;
+  --muted:#5E6B63;
+  --line:#DCE0D6;
+  --pine:#1E3A2B;
+  --pine-ink:#F5F6F1;
+  --sand:#D8C79E;
+  --sand-soft:#F1EADA;
+  --flag:#B3261E;
+  --best:#1E3A2B;
+  --best-ink:#FFFFFF;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#121915; --surface:#1A231E; --ink:#E7EBE4; --muted:#9AA79F; --line:#2C3830;
+    --pine:#2F5A43; --pine-ink:#F0F3EE; --sand:#B9A77A; --sand-soft:#2A2A20;
+    --flag:#E2665C; --best:#C9B37E; --best-ink:#141A16;
+    --t-dente:#6FAE88; --t-kraft:#7FA6D6; --t-flores:#D98394; --t-fuentes:#D9AE55;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#121915; --surface:#1A231E; --ink:#E7EBE4; --muted:#9AA79F; --line:#2C3830;
+  --pine:#2F5A43; --pine-ink:#F0F3EE; --sand:#B9A77A; --sand-soft:#2A2A20;
+  --flag:#E2665C; --best:#C9B37E; --best-ink:#141A16;
+  --t-dente:#6FAE88; --t-kraft:#7FA6D6; --t-flores:#D98394; --t-fuentes:#D9AE55;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--pine)}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--flag);outline-offset:2px}
+
+header{background:var(--pine);color:var(--pine-ink);padding:20px 18px 0;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.title{font-family:'Libre Caslon Text',Georgia,serif;font-weight:700;font-size:26px;letter-spacing:-.01em;line-height:1.1}
+.title small{display:block;font-family:'IBM Plex Sans',sans-serif;font-weight:400;font-size:13px;opacity:.75;margin-top:4px;letter-spacing:0}
+.courses{display:flex;gap:4px;margin-top:16px}
+.course-btn{flex:1;background:transparent;border:0;border-bottom:3px solid transparent;color:var(--pine-ink);opacity:.65;padding:10px 4px 9px;cursor:pointer;font-family:'Libre Caslon Text',Georgia,serif;font-size:17px}
+.course-btn[aria-pressed="true"]{opacity:1;border-bottom-color:var(--sand)}
+.course-btn span{display:block;font-family:'IBM Plex Sans',sans-serif;font-size:11px;opacity:.8}
+
+nav.views{display:flex;gap:6px;padding:12px 16px;overflow-x:auto;background:var(--bg);border-bottom:1px solid var(--line)}
+.view-btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.view-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+main{max-width:760px;margin:0 auto;padding:18px 16px 40px}
+h2{font-family:'Libre Caslon Text',Georgia,serif;font-size:21px;font-weight:700;margin-bottom:4px}
+.lede{color:var(--muted);font-size:14px;margin-bottom:16px;max-width:60ch}
+
+/* Leaderboard: manual scoreboard */
+.board{background:var(--surface);border:2px solid var(--ink);border-radius:4px;overflow:hidden}
+.board-row{display:grid;grid-template-columns:44px 1fr 58px 50px 58px;align-items:center;border-top:1px solid var(--line)}
+.board-row:first-child{border-top:0}
+.board-head{background:var(--ink);color:var(--bg);font-size:12px;font-weight:600}
+.board-head > div{padding:8px 6px;text-align:center}
+.board-head > div:nth-child(2){text-align:left}
+.pos{font-family:'Libre Caslon Text',Georgia,serif;font-size:20px;font-weight:700;text-align:center}
+.team-cell{padding:12px 6px;display:flex;align-items:center;gap:10px;min-width:0}
+.swatch{width:6px;align-self:stretch;border-radius:2px;flex-shrink:0}
+.team-name{font-weight:600;font-size:16px}
+.thru{font-size:12px;color:var(--muted)}
+.tile{margin:6px 4px;background:var(--sand-soft);border:1px solid var(--line);border-radius:3px;text-align:center;padding:7px 0;font-weight:600;font-size:16px}
+.tile.net{background:var(--pine);color:var(--pine-ink);border-color:var(--pine);font-family:'Libre Caslon Text',Georgia,serif;font-size:20px;font-weight:700}
+.tile.empty{color:var(--muted);font-weight:400}
+.board-note{font-size:13px;color:var(--muted);margin-top:10px}
+
+/* Totals across rounds */
+.totals{margin-top:26px}
+table{border-collapse:collapse;width:100%}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.tbl th,.tbl td{padding:9px 8px;text-align:center;border-bottom:1px solid var(--line);font-size:14px;white-space:nowrap}
+.tbl th{font-size:12px;color:var(--muted);font-weight:600;background:var(--bg)}
+.tbl td:first-child,.tbl th:first-child{text-align:left}
+.tbl tr:last-child td{border-bottom:0}
+.tbl .strong{font-weight:700}
+
+/* Score entry */
+.team-pick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.team-pick button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:9px 4px;font-weight:600;font-size:14px;cursor:pointer;border-top:4px solid var(--tc)}
+.team-pick button[aria-pressed="true"]{background:var(--tc);color:#fff;border-color:var(--tc)}
+:root[data-theme="dark"] .team-pick button[aria-pressed="true"]{color:#141A16}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .team-pick button[aria-pressed="true"]{color:#141A16}}
+
+.hole-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.hole-num{font-family:'Libre Caslon Text',Georgia,serif;font-size:30px;font-weight:700;line-height:1}
+.hole-num small{display:block;font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:500;color:var(--muted);margin-top:4px}
+.arrow{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:20px;cursor:pointer}
+.arrow:disabled{opacity:.35;cursor:default}
+.holes-strip{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-bottom:16px}
+.hs{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:5px 0;font-size:12px;font-weight:600;cursor:pointer;text-align:center}
+.hs.done{background:var(--sand-soft);border-color:var(--sand)}
+.hs[aria-current="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.players{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.prow{display:grid;grid-template-columns:1fr auto;align-items:center;padding:10px 12px;border-top:1px solid var(--line);gap:8px}
+.prow:first-child{border-top:0}
+.pname{font-weight:600}
+.pmeta{font-size:12px;color:var(--muted)}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--bg);font-size:20px;cursor:pointer;line-height:1}
+.score{width:44px;height:44px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;border:2px solid var(--line);background:var(--bg)}
+.score.is-best{background:var(--best);color:var(--best-ink);border-color:var(--best)}
+.score.blank{color:var(--muted);font-weight:400}
+.hole-total{display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--sand-soft);border-top:1px solid var(--line);border-radius:0 0 8px 8px;font-weight:600}
+.hole-total strong{font-size:22px;font-family:'Libre Caslon Text',Georgia,serif}
+.hint{font-size:13px;color:var(--muted);margin-top:10px}
+.clear-btn{margin-top:12px;border:1px solid var(--line);background:transparent;border-radius:6px;padding:8px 12px;font-size:13px;cursor:pointer;color:var(--muted)}
+
+/* Scorecard grid */
+.card .tbl th,.card .tbl td{padding:7px 6px;font-size:13px;min-width:30px}
+.card td.b{background:var(--best);color:var(--best-ink);font-weight:700}
+.card tr.sum td{font-weight:700;background:var(--sand-soft)}
+.card td.out{border-left:2px solid var(--line)}
+.card-team{margin-bottom:22px}
+.card-team h3{font-size:16px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.card-team h3 i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.card-foot{font-size:13px;color:var(--muted);margin-top:6px}
+
+/* Handicaps */
+.hcp-team{margin-bottom:22px}
+.hcp-team h3{font-size:16px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.hcp-team h3 i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.tbl tr.allow td{background:var(--pine);color:var(--pine-ink);font-weight:700}
+.rules{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--sand);border-radius:6px;padding:14px 16px;margin-bottom:20px;font-size:14px}
+.rules p+p{margin-top:6px}
+.sync{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;font-weight:600;background:rgba(255,255,255,.12);padding:4px 10px;border-radius:999px}
+.sync i{width:8px;height:8px;border-radius:50%;background:#C9B37E}
+.sync.live i{background:#5BD08A}
+.sync.error i{background:#FF7A6E}
+.skin-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.skin-sum div{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px;text-align:center}
+.skin-sum b{display:block;font-family:'Libre Caslon Text',Georgia,serif;font-size:22px}
+.skin-sum span{font-size:12px;color:var(--muted)}
+.skins{background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:22px}
+.skin-row{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.skin-row:first-child{border-top:0}
+.skin-hole{font-family:'Libre Caslon Text',Georgia,serif;font-size:20px;font-weight:700;line-height:1}
+.skin-hole small{display:block;font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:500;color:var(--muted);margin-top:3px}
+.skin-who{font-weight:600}
+.skin-detail{font-size:12px;color:var(--muted)}
+.tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.tag.won{background:var(--pine);color:var(--pine-ink)}
+.tag.dead{background:var(--sand-soft);color:var(--muted);border:1px solid var(--line)}
+.tag.live{border:1px dashed var(--muted);color:var(--muted)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--flag);margin-left:3px;vertical-align:middle}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion: no-preference){.score{transition:background .15s,color .15s}}
+
+.tee{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;line-height:1.5;vertical-align:1px}
+.tee-blue{background:linear-gradient(135deg,#2980b9,#1a5276);color:#fff}
+.tee-white{background:linear-gradient(135deg,#ecf0f1,#bdc3c7);color:#1B2620}
+.tee-green{background:#D5F5E3;color:#1E8449;border:.5px solid #A9DFBF}
+.tee-gold{background:#FEF3C7;color:#92400E;border:.5px solid #FCD34D}
+.hc-lo{color:#27ae60;font-weight:700}.hc-mid{color:#e67e22;font-weight:700}.hc-hi{color:#e74c3c;font-weight:700}
+.board-row{grid-template-columns:44px 1fr 54px 46px 58px}
+.group-pick{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:14px}
+.group-pick button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 8px;text-align:left;cursor:pointer;font-weight:600;font-size:14px}
+.group-pick button[aria-pressed="true"]{background:var(--pine);color:var(--pine-ink);border-color:var(--pine)}
+.go-btn{width:100%;border:0;background:var(--ink);color:var(--bg);border-radius:6px;padding:12px;font-weight:600;font-size:15px;cursor:pointer}
+.go-btn:disabled{opacity:.4;cursor:default}
+.group-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;color:var(--muted)}
+.link-btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer}
+.pts{font-size:12px;color:var(--muted);text-align:center;min-width:44px}
+.pts b{display:block;font-size:15px;color:var(--ink)}
+.card td sup{font-size:9px;color:var(--flag);margin-left:1px}
+.card td.b sup{color:inherit}
+</style>
+</head>
+<body>
+<header>
+  <div class="title">SOB Saturday<small>Braelinn Country Club. Individual net Stableford plus skins.</small></div>
+  <div id="sync" class="sync" role="status"><i></i><span>Connecting…</span></div>
+  <div style="height:14px"></div>
+</header>
+<nav class="views" role="group" aria-label="View">
+  <button class="view-btn" data-v="board" aria-pressed="true">Leaderboard</button>
+  <button class="view-btn" data-v="enter" aria-pressed="false">Enter scores</button>
+  <button class="view-btn" data-v="card" aria-pressed="false">Scorecard</button>
+  <button class="view-btn" data-v="skins" aria-pressed="false">Skins</button>
+  <button class="view-btn" data-v="hcp" aria-pressed="false">Handicaps</button>
+</nav>
+<main>
+  <section id="v-board"></section>
+  <section id="v-enter" hidden></section>
+  <section id="v-card" hidden></section>
+  <section id="v-skins" hidden></section>
+  <section id="v-hcp" hidden></section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+// ===== PASTE YOUR TWO SUPABASE VALUES HERE (same ones as Pinehurst) =====
+const SUPABASE_URL = "PASTE_PROJECT_URL_HERE";
+const SUPABASE_KEY = "PASTE_ANON_KEY_HERE";
+// =========================================================================
+// Reuses the Pinehurst table; this event's rows are tagged so they never mix.
+const TABLE = "pinehurst_scores";
+const EVENT_COURSE = 100, EVENT_TEAM = "sob";
+
+const PLAYERS = [
+  {n:"Dwayne Hobbs",     tee:"Green", h:9},
+  {n:"Kenny Hobbs",      tee:"White", h:10},
+  {n:"Brent Myers",      tee:"White", h:13},
+  {n:"Fred Port",        tee:"White", h:6},
+  {n:"Tony Schmits",     tee:"White", h:13},
+  {n:"Ron Pegg",         tee:"Green", h:13},
+  {n:"Graham Fletcher",  tee:"Blue",  h:9},
+  {n:"Eric Nettleton",   tee:"Blue",  h:11},
+  {n:"Brenden Belesky",  tee:"Blue",  h:5},
+  {n:"John Kaufman",     tee:"White", h:5},
+  {n:"Jim Southcomb",    tee:"Gold",  h:14},
+  {n:"Larry Panfalone",  tee:"Green", h:13},
+  {n:"Brian Tuttle",     tee:"White", h:12},
+  {n:"Papa Groft",       tee:"Green", h:20},
+];
+
+// Braelinn CC scorecard, men's handicap row
+const PAR = [5,4,4,3,4,3,5,4,4, 5,3,4,4,3,4,4,5,4];
+const SI  = [1,5,9,17,15,11,13,3,7, 6,14,16,4,10,18,12,8,2];
+const YDS = {
+  Blue:  [533,403,343,169,335,176,493,385,378, 488,159,351,390,161,302,354,528,404],
+  White: [507,387,328,144,319,160,483,359,362, 478,144,320,374,152,287,339,512,388],
+  Green: [458,282,286,120,272,137,433,279,318, 446,128,275,318,130,240,297,439,335],
+  Gold:  [383,270,277,115,225,132,375,271,262, 384,124,263,312,125,229,237,430,299],
+};
+const RATING = {Blue:"70.3 / 130", White:"68.8 / 127", Green:"65.0 / 119", Gold:"62.3 / 113"};
+
+// Stableford: full handicap, hardest holes first, 2nd stroke over 18
+const strokesFull = (h, si) => Math.floor(h/18) + (si <= h % 18 ? 1 : 0);
+// Skins: capped at 18, so never more than one stroke a hole
+const strokesSkin = (h, si) => si <= Math.min(h, 18) ? 1 : 0;
+const POINTS = d => d <= -2 ? 4 : d === -1 ? 3 : d === 0 ? 2 : d === 1 ? 1 : 0;
+
+const teeBadge = t => `<span class="tee tee-${t.toLowerCase()}">${t}</span>`;
+const hcClass = h => h <= 9 ? "hc-lo" : h <= 15 ? "hc-mid" : "hc-hi";
+
+// ---- state + live sync ----
+const LIVE = SUPABASE_URL.startsWith("https://") && !SUPABASE_KEY.startsWith("PASTE") && window.supabase;
+const KEY = LIVE ? "sob-sat-live-cache-v1" : "sob-sat-v1";
+let scores = {}; // scores[player][hole] = gross (0 = pickup)
+try { scores = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ scores = {}; }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(scores)); } catch(e){} }
+const getS = (p,h) => scores?.[p]?.[h] ?? null;
+function applyLocal(p,h,v){
+  scores[p] ??= {};
+  if(v === null) delete scores[p][h]; else scores[p][h] = v;
+  save();
+}
+const pending = {};
+const pkey = (p,h) => p + "|" + h;
+function setS(p,h,v){
+  applyLocal(p,h,v);
+  if(!LIVE) return;
+  const k = pkey(p,h);
+  if(pending[k]) clearTimeout(pending[k].timer);
+  pending[k] = {v, timer: setTimeout(() => pushScore(p,h,v,k), 350)};
+}
+let db = null;
+function setStatus(state){
+  const box = document.getElementById("sync");
+  const text = {live:"Live — syncing all phones", connecting:"Connecting…", error:"Offline — retrying", local:"Device only — keys not added"}[state];
+  box.className = "sync " + state;
+  box.querySelector("span").textContent = text;
+}
+async function pushScore(p,h,v,k){
+  try{
+    const row = {course:EVENT_COURSE, team:EVENT_TEAM, player:p, hole:h};
+    const {error} = v === null
+      ? await db.from(TABLE).delete().match(row)
+      : await db.from(TABLE).upsert({...row, gross:v, updated_at:new Date().toISOString()});
+    if(error) throw error;
+    if(pending[k] && pending[k].v === v) delete pending[k];
+    setStatus("live");
+  }catch(e){
+    setStatus("error");
+    pending[k].timer = setTimeout(() => pushScore(p,h,pending[k].v,k), 3000);
+  }
+}
+async function loadAll(){
+  const {data, error} = await db.from(TABLE).select("player,hole,gross").eq("course", EVENT_COURSE).eq("team", EVENT_TEAM);
+  if(error){ setStatus("error"); return; }
+  const keep = Object.entries(pending).map(([k,x]) => [k.split("|"), x.v]);
+  scores = {};
+  data.forEach(r => applyLocal(r.player, r.hole, r.gross));
+  keep.forEach(([[p,h], v]) => applyLocal(+p, +h, v));
+  setStatus("live");
+  render();
+}
+function startSync(){
+  if(!LIVE){ setStatus("local"); return; }
+  setStatus("connecting");
+  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  db.channel("sob-saturday-scores")
+    .on("postgres_changes", {event:"*", schema:"public", table:TABLE}, payload => {
+      const del = payload.eventType === "DELETE";
+      const r = del ? payload.old : payload.new;
+      if(del){ loadAll(); return; } // delete payloads may lack course/team
+      if(r.course !== EVENT_COURSE || r.team !== EVENT_TEAM) return;
+      if(pending[pkey(r.player, r.hole)]) return;
+      applyLocal(r.player, r.hole, r.gross);
+      render();
+    })
+    .subscribe(status => {
+      if(status === "SUBSCRIBED") loadAll();
+      else if(["CHANNEL_ERROR","TIMED_OUT","CLOSED"].includes(status)) setStatus("error");
+    });
+  document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") loadAll(); });
+  setInterval(() => { if(document.visibilityState === "visible") loadAll(); }, 30000);
+}
+
+// ---- scoring ----
+function holePts(p,h){
+  const g = getS(p,h);
+  if(g === null) return null;
+  if(g === 0) return 0;
+  return POINTS(g - strokesFull(PLAYERS[p].h, SI[h]) - PAR[h]);
+}
+// Pickup counts as net double bogey for the gross total
+const grossFor = (p,h) => { const g = getS(p,h); return g === 0 ? PAR[h] + 2 + strokesFull(PLAYERS[p].h, SI[h]) : g; };
+function summary(p){
+  let pts = 0, gross = 0, thru = 0, pu = 0;
+  for(let h=0; h<18; h++){
+    const g = getS(p,h); if(g === null) continue;
+    thru++; pts += holePts(p,h); gross += grossFor(p,h); if(g === 0) pu++;
+  }
+  return {pts, gross, thru, pu};
+}
+
+let view = "board", hole = 0;
+let group = [];
+try { group = JSON.parse(localStorage.getItem("sob-sat-group")) || []; } catch(e){ group = []; }
+let picking = !group.length;
+const saveGroup = () => { try { localStorage.setItem("sob-sat-group", JSON.stringify(group)); } catch(e){} };
+
+const el = id => document.getElementById(id);
+
+function renderBoard(){
+  const rows = PLAYERS.map((pl,p) => ({p, pl, ...summary(p)}));
+  rows.sort((a,b) => b.pts - a.pts || b.thru - a.thru || a.pl.n.localeCompare(b.pl.n));
+  const pos = rows.map(r => {
+    if(!r.thru) return "";
+    const first = rows.findIndex(x => x.thru && x.pts === r.pts);
+    const tied = rows.filter(x => x.thru && x.pts === r.pts).length > 1;
+    return (tied ? "T" : "") + (first + 1);
+  });
+  const any = rows.some(r => r.thru);
+  el("v-board").innerHTML = `
+    <h2>Leaderboard</h2>
+    <p class="lede">Net Stableford at full handicap: eagle or better 4, birdie 3, par 2, bogey 1, double or worse 0. Most points wins.</p>
+    <div class="board" role="table" aria-label="Leaderboard">
+      <div class="board-row board-head" role="row"><div>Pos</div><div>Player</div><div>Gross</div><div>Hcp</div><div>Pts</div></div>
+      ${rows.map((r,i) => `
+        <div class="board-row" role="row">
+          <div class="pos">${pos[i] || "–"}</div>
+          <div class="team-cell"><div style="min-width:0">
+            <div class="team-name">${r.pl.n}</div>
+            <div class="thru">${teeBadge(r.pl.tee)} ${r.thru === 18 ? "Finished" : r.thru === 0 ? "Not started" : "Thru " + r.thru}</div></div></div>
+          <div class="tile ${r.thru ? "" : "empty"}">${r.thru ? r.gross + (r.pu ? "*" : "") : "–"}</div>
+          <div class="tile">${r.pl.h}</div>
+          <div class="tile net ${r.thru ? "" : "empty"}">${r.thru ? r.pts : "–"}</div>
+        </div>`).join("")}
+    </div>
+    <p class="board-note">${any ? "* Includes a pickup, counted as net double bogey in the gross total." : "No scores yet. Open Enter scores, pick your group and start posting holes."}</p>`;
+}
+
+function renderEnter(){
+  if(picking){
+    el("v-enter").innerHTML = `
+      <h2>Pick your group</h2>
+      <p class="lede">Choose the players you’re scoring for. This phone remembers them.</p>
+      <div class="group-pick" role="group" aria-label="Players">
+        ${PLAYERS.map((pl,p) => `<button data-gp="${p}" aria-pressed="${group.includes(p)}">${pl.n}</button>`).join("")}
+      </div>
+      <button class="go-btn" data-go="1" ${group.length ? "" : "disabled"}>Score ${group.length || ""} player${group.length === 1 ? "" : "s"}</button>`;
+    return;
+  }
+  const doneHole = h => group.every(p => getS(p,h) !== null);
+  const holePtsSum = group.reduce((s,p) => s + (holePts(p,hole) ?? 0), 0);
+  el("v-enter").innerHTML = `
+    <div class="group-bar"><span>Scoring ${group.length} player${group.length === 1 ? "" : "s"}</span><button class="link-btn" data-pick="1">Change group</button></div>
+    <div class="hole-bar">
+      <button class="arrow" data-step="-1" aria-label="Previous hole" ${hole===0?"disabled":""}>‹</button>
+      <div class="hole-num" style="text-align:center">Hole ${hole+1}<small>Par ${PAR[hole]}, Hdcp ${SI[hole]}</small></div>
+      <button class="arrow" data-step="1" aria-label="Next hole" ${hole===17?"disabled":""}>›</button>
+    </div>
+    <div class="holes-strip" aria-label="Jump to hole">
+      ${Array.from({length:18},(_,h) => `<button class="hs ${doneHole(h)?"done":""}" data-hole="${h}" aria-current="${h===hole}">${h+1}</button>`).join("")}
+    </div>
+    <div class="players">
+      ${group.map(p => {
+        const pl = PLAYERS[p], v = getS(p,hole), pts = holePts(p,hole);
+        const k = strokesFull(pl.h, SI[hole]), ks = strokesSkin(pl.h, SI[hole]);
+        const meta = `${teeBadge(pl.tee)} Hcp ${pl.h}${k ? `, stroke${k>1?"s":""} ${'<span class="dot"></span>'.repeat(k)}` : ""}${k > ks ? " (1 for skins)" : ""}`;
+        return `<div class="prow">
+          <div><div class="pname">${pl.n}</div><div class="pmeta">${meta}</div></div>
+          <div class="stepper">
+            <button data-p="${p}" data-d="-1" aria-label="Lower ${pl.n} score">−</button>
+            <div class="score ${v===null?"blank":""} ${pts!==null&&pts>=3?"is-best":""}" aria-live="polite" aria-label="${pl.n} score">${v===null?"–":v===0?"P":v}</div>
+            <button data-p="${p}" data-d="1" aria-label="Raise ${pl.n} score">+</button>
+            <div class="pts"><b>${pts===null?"–":pts}</b>pts</div>
+          </div>
+        </div>`;
+      }).join("")}
+      <div class="hole-total"><span>Group points on hole ${hole+1}</span><strong>${group.some(p => getS(p,hole)!==null) ? holePtsSum : "–"}</strong></div>
+    </div>
+    <p class="hint">Enter gross scores. The first tap of + sets par. Go below 1 for a pickup (P, 0 points). Red dots show strokes on this hole; highlighted scores are net birdie or better.</p>
+    <button class="clear-btn" data-clear="1">Clear hole ${hole+1}</button>`;
+}
+
+function renderCard(){
+  const sum = (p,a,z) => { let s = 0; for(let h=a; h<z; h++){ if(getS(p,h)===null) return ""; s += grossFor(p,h); } return s; };
+  el("v-card").innerHTML = `
+    <h2>Scorecard</h2>
+    <p class="lede">Gross scores. Red marks show strokes received; highlighted cells are net birdie or better. Tap a hole number to edit it.</p>
+    <div class="scroll card"><table class="tbl">
+      <thead>
+        <tr><th>Hole</th>${Array.from({length:18},(_,h)=>`<th class="${h===9?"out":""}"><button class="hs" style="border:0;background:none;padding:0" data-edit="${h}">${h+1}</button></th>`).join("")}<th class="out">Out</th><th>In</th><th>Tot</th><th>Pts</th></tr>
+        <tr><th>Par</th>${PAR.map((x,h)=>`<th class="${h===9?"out":""}">${x}</th>`).join("")}<th class="out">36</th><th>36</th><th>72</th><th></th></tr>
+        <tr><th>Hdcp</th>${SI.map((x,h)=>`<th class="${h===9?"out":""}">${x}</th>`).join("")}<th class="out"></th><th></th><th></th><th></th></tr>
+      </thead>
+      <tbody>
+        ${PLAYERS.map((pl,p) => {
+          const s = summary(p);
+          const cells = Array.from({length:18},(_,h) => {
+            const v = getS(p,h), pts = holePts(p,h), k = strokesFull(pl.h, SI[h]);
+            return `<td class="${pts!==null&&pts>=3?"b":""} ${h===9?"out":""}">${v===null?"":v===0?"P":v}${k?`<sup>${"•".repeat(k)}</sup>`:""}</td>`;
+          }).join("");
+          return `<tr><td>${pl.n.split(" ").slice(-1)[0]}${pl.n.startsWith("Kenny")?" K":pl.n.startsWith("Dwayne")?" D":""}</td>${cells}<td class="out strong">${sum(p,0,9)}</td><td class="strong">${sum(p,9,18)}</td><td class="strong">${s.thru===18?s.gross:""}</td><td class="strong">${s.thru?s.pts:""}</td></tr>`;
+        }).join("")}
+      </tbody>
+    </table></div>`;
+}
+
+function skinsAll(){
+  return Array.from({length:18}, (_,h) => {
+    const entries = [];
+    PLAYERS.forEach((pl,p) => {
+      const g = getS(p,h);
+      if(g === null || g === 0) return;
+      const k = strokesSkin(pl.h, SI[h]);
+      entries.push({p, pl, g, k, adj: g - 0.5 * k});
+    });
+    const done = PLAYERS.every((_,p) => getS(p,h) !== null);
+    if(!entries.length) return {h, state: done ? "dead" : "none", lead:[]};
+    const low = Math.min(...entries.map(e => e.adj));
+    const lead = entries.filter(e => e.adj === low);
+    if(!done) return {h, state:"live", lead};
+    return {h, state: lead.length === 1 ? "won" : "dead", lead};
+  });
+}
+function renderSkins(){
+  const res = skinsAll();
+  const won = res.filter(r => r.state === "won"), dead = res.filter(r => r.state === "dead");
+  const tally = {};
+  won.forEach(r => { const e = r.lead[0]; tally[e.p] ??= {pl:e.pl, n:0, holes:[]}; tally[e.p].n++; tally[e.p].holes.push(r.h+1); });
+  const rows = Object.values(tally).sort((a,b) => b.n - a.n || a.pl.n.localeCompare(b.pl.n));
+  const sc = e => `gross ${e.g}${e.k ? `, counts ${e.adj}` : ""}`;
+  el("v-skins").innerHTML = `
+    <h2>Skins</h2>
+    <p class="lede">Strokes capped at 18, so one stroke a hole at most. Each stroke takes 0.5 off the gross. Lowest adjusted score wins the skin; any tie and the hole dies. A hole is decided once all 14 players have posted it.</p>
+    <div class="skin-sum">
+      <div><b>${won.length}</b><span>Skins won</span></div>
+      <div><b>${dead.length}</b><span>Holes tied</span></div>
+      <div><b>${18 - won.length - dead.length}</b><span>Still open</span></div>
+    </div>
+    <div class="skins">
+      ${res.map(r => {
+        const hd = `<div class="skin-hole">${r.h+1}<small>Par ${PAR[r.h]}, Hdcp ${SI[r.h]}</small></div>`;
+        if(r.state === "none") return `<div class="skin-row">${hd}<div class="skin-detail">No scores yet</div><span class="tag live">Open</span></div>`;
+        const e = r.lead[0];
+        if(r.state === "won") return `<div class="skin-row">${hd}<div><div class="skin-who">${e.pl.n}</div><div class="skin-detail">${sc(e)}</div></div><span class="tag won">Skin</span></div>`;
+        if(r.state === "dead") return `<div class="skin-row">${hd}<div><div class="skin-who">Tied</div><div class="skin-detail">${r.lead.map(x => x.pl.n).join(", ") || "All pickups"}</div></div><span class="tag dead">No skin</span></div>`;
+        return `<div class="skin-row">${hd}<div><div class="skin-who">${r.lead.length === 1 ? e.pl.n : "Tied"}</div><div class="skin-detail">${r.lead.length === 1 ? sc(e) : r.lead.map(x => x.pl.n).join(", ")}, waiting on other groups</div></div><span class="tag live">Leading</span></div>`;
+      }).join("")}
+    </div>
+    <h2>Skins by player</h2>
+    ${rows.length ? `<div class="scroll"><table class="tbl">
+      <thead><tr><th>Player</th><th>Holes</th><th>Skins</th></tr></thead>
+      <tbody>${rows.map(x => `<tr><td>${x.pl.n}</td><td>${x.holes.join(", ")}</td><td class="strong">${x.n}</td></tr>`).join("")}</tbody>
+    </table></div>` : `<p class="board-note">No skins won yet.</p>`}`;
+}
+
+function strokeHoles(h){
+  if(h <= 18) return h ? `Hdcp holes 1–${h}` : "None";
+  return `1 on every hole, 2 on Hdcp 1–${h - 18}`;
+}
+function renderHcp(){
+  const sorted = PLAYERS.map((pl,p)=>({pl,p})).sort((a,b) => a.pl.h - b.pl.h || a.pl.n.localeCompare(b.pl.n));
+  const yrow = (a,z) => Object.keys(YDS).map(t => YDS[t].slice(a,z).reduce((s,x)=>s+x,0));
+  el("v-hcp").innerHTML = `
+    <h2>Handicaps</h2>
+    <div class="rules">
+      <p>Stableford uses each player’s full handicap. Over 18 gets a second stroke on the hardest holes.</p>
+      <p>Skins cap strokes at 18, so one stroke a hole at most, worth 0.5.</p>
+    </div>
+    <div class="scroll"><table class="tbl">
+      <thead><tr><th>Player</th><th>Tees</th><th>Hcp</th><th>Stableford strokes</th><th>Skins strokes</th></tr></thead>
+      <tbody>${sorted.map(({pl}) => `<tr><td>${pl.n}</td><td>${teeBadge(pl.tee)}</td><td class="${hcClass(pl.h)}">${pl.h}</td><td>${strokeHoles(pl.h)}</td><td>${Math.min(pl.h,18)}</td></tr>`).join("")}</tbody>
+    </table></div>
+    <h2 style="margin-top:26px">Braelinn Country Club</h2>
+    <p class="lede">${Object.entries(RATING).map(([t,r]) => `${t} ${r}`).join(", ")} (rating / slope)</p>
+    <div class="scroll card"><table class="tbl">
+      <thead><tr><th>Hole</th><th>Par</th><th>Hdcp</th>${Object.keys(YDS).map(t => `<th>${teeBadge(t)}</th>`).join("")}</tr></thead>
+      <tbody>
+        ${PAR.map((x,h) => `${h===9?`<tr class="sum"><td>Out</td><td>36</td><td></td>${yrow(0,9).map(v=>`<td>${v}</td>`).join("")}</tr>`:""}<tr><td>${h+1}</td><td>${x}</td><td>${SI[h]}</td>${Object.keys(YDS).map(t => `<td>${YDS[t][h]}</td>`).join("")}</tr>`).join("")}
+        <tr class="sum"><td>In</td><td>36</td><td></td>${yrow(9,18).map(v=>`<td>${v}</td>`).join("")}</tr>
+        <tr class="sum"><td>Total</td><td>72</td><td></td>${yrow(0,18).map(v=>`<td>${v}</td>`).join("")}</tr>
+      </tbody>
+    </table></div>`;
+}
+
+function render(){
+  document.querySelectorAll(".view-btn").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === view));
+  ["board","enter","card","skins","hcp"].forEach(v => el("v-"+v).hidden = v !== view);
+  ({board:renderBoard, enter:renderEnter, card:renderCard, skins:renderSkins, hcp:renderHcp})[view]();
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  if(b.dataset.v){ view = b.dataset.v; render(); window.scrollTo(0,0); return; }
+  if(b.dataset.gp !== undefined){ const p = +b.dataset.gp; group = group.includes(p) ? group.filter(x => x !== p) : [...group, p]; saveGroup(); render(); return; }
+  if(b.dataset.go){ picking = false; render(); return; }
+  if(b.dataset.pick){ picking = true; render(); return; }
+  if(b.dataset.step){ hole = Math.min(17, Math.max(0, hole + +b.dataset.step)); render(); return; }
+  if(b.dataset.hole !== undefined){ hole = +b.dataset.hole; render(); return; }
+  if(b.dataset.edit !== undefined){ hole = +b.dataset.edit; view = "enter"; if(!group.length) picking = true; render(); window.scrollTo(0,0); return; }
+  if(b.dataset.clear){ group.forEach(p => setS(p,hole,null)); render(); return; }
+  if(b.dataset.p !== undefined){
+    const p = +b.dataset.p, d = +b.dataset.d, cur = getS(p,hole);
+    let next;
+    if(cur === null) next = d > 0 ? PAR[hole] : null;
+    else if(cur === 0) next = d > 0 ? 1 : null;
+    else { next = cur + d; if(next > 12) next = 12; }
+    setS(p,hole,next); render();
+  }
+});
+
+render();
+startSync();
+</script>
+</body>
+</html>
