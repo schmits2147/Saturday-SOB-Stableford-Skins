@@ -230,6 +230,7 @@ const PLAYERS = [
   {n:"Larry Panfalone",  tee:"Green", h:13},
   {n:"Brian Tuttle",     tee:"White", h:12},
   {n:"Papa Groft",       tee:"Green", h:20},
+  {n:"Kenny Reeves",     tee:"White", h:13},
 ];
 
 // Braelinn CC scorecard, men's handicap row
@@ -443,7 +444,7 @@ function renderCard(){
             const v = getS(p,h), pts = holePts(p,h), k = strokesFull(pl.h, SI[h]);
             return `<td class="${pts!==null&&pts>=3?"b":""} ${h===9?"out":""}">${v===null?"":v===0?"P":v}${k?`<sup>${"•".repeat(k)}</sup>`:""}</td>`;
           }).join("");
-          return `<tr><td>${pl.n.split(" ").slice(-1)[0]}${pl.n.startsWith("Kenny")?" K":pl.n.startsWith("Dwayne")?" D":""}</td>${cells}<td class="out strong">${sum(p,0,9)}</td><td class="strong">${sum(p,9,18)}</td><td class="strong">${s.thru===18?s.gross:""}</td><td class="strong">${s.thru?s.pts:""}</td></tr>`;
+          return `<tr><td>${pl.n.split(" ").slice(-1)[0]}${pl.n.==="Kenny Hobbs"?" K":pl.n==="Dwayne Hobbs"?" D":""}</td>${cells}<td class="out strong">${sum(p,0,9)}</td><td class="strong">${sum(p,9,18)}</td><td class="strong">${s.thru===18?s.gross:""}</td><td class="strong">${s.thru?s.pts:""}</td></tr>`;
         }).join("")}
       </tbody>
     </table></div>`;
@@ -475,7 +476,7 @@ function renderSkins(){
   const sc = e => `gross ${e.g}${e.k ? `, counts ${e.adj}` : ""}`;
   el("v-skins").innerHTML = `
     <h2>Skins</h2>
-    <p class="lede">Strokes capped at 18, so one stroke a hole at most. Each stroke takes 0.5 off the gross. Lowest adjusted score wins the skin; any tie and the hole dies. A hole is decided once all 14 players have posted it.</p>
+    <p class="lede">Strokes capped at 18, so one stroke a hole at most. Each stroke takes 0.5 off the gross. Lowest adjusted score wins the skin; any tie and the hole dies. A hole is decided once every player has posted it.</p>
     <div class="skin-sum">
       <div><b>${won.length}</b><span>Skins won</span></div>
       <div><b>${dead.length}</b><span>Holes tied</span></div>
