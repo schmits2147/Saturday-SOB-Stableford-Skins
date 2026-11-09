@@ -201,11 +201,26 @@ table{border-collapse:collapse;width:100%}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin:-4px 0 12px;align-items:center}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend .sc{width:18px;height:18px;font-size:10px;color:var(--ink);font-style:normal}
+
+.tee-black{background:#1B2620;color:#fff;border:.5px solid #555}
+.setup-card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:16px}
+.setup-card h3{margin:0 0 10px;font-size:15px}
+.srow{display:grid;grid-template-columns:1fr 84px 58px 34px;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.srow:first-of-type{border-top:0}
+.setup-card input,.setup-card select{font:inherit;font-size:15px;padding:8px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box;min-width:0}
+.icon-btn{border:1px solid var(--line);background:var(--bg);border-radius:5px;height:38px;cursor:pointer;color:var(--flag);font-size:16px}
+.row-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.sbtn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer;color:var(--ink)}
+.sbtn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sbtn.danger{color:var(--flag)}
+.smsg{font-size:13px;color:var(--muted);margin-top:8px}
+.smsg.ok{color:#1E8449}.smsg.bad{color:var(--flag)}
+.pin-box{display:flex;gap:8px;max-width:300px}
 </style>
 </head>
 <body>
 <header>
-  <div class="title">SOB Saturday<small>Braelinn Country Club. Individual net Stableford plus skins.</small></div>
+  <div class="title">SOB Saturday<small id="subtitle">Braelinn Country Club.</small></div>
   <div id="sync" class="sync" role="status"><i></i><span>Connecting…</span></div>
   <div style="height:14px"></div>
 </header>
@@ -215,6 +230,7 @@ table{border-collapse:collapse;width:100%}
   <button class="view-btn" data-v="card" aria-pressed="false">Scorecard</button>
   <button class="view-btn" data-v="skins" aria-pressed="false">Skins</button>
   <button class="view-btn" data-v="hcp" aria-pressed="false">Handicaps</button>
+  <button class="view-btn" data-v="setup" aria-pressed="false">Setup</button>
 </nav>
 <main>
   <section id="v-board"></section>
@@ -222,56 +238,51 @@ table{border-collapse:collapse;width:100%}
   <section id="v-card" hidden></section>
   <section id="v-skins" hidden></section>
   <section id="v-hcp" hidden></section>
+  <section id="v-setup" hidden></section>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-// ===== PASTE YOUR TWO SUPABASE VALUES HERE (same ones as Pinehurst) =====
+// ===== PASTE YOUR TWO SUPABASE VALUES HERE (same ones as before) =====
 const SUPABASE_URL = "https://skqixupmbhqoxruhimwx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_fvbUP_gX-XEWG7cFi8WwPg_mKKF_AK4";
-// =========================================================================
-// Reuses the Pinehurst table; this event's rows are tagged so they never mix.
-const TABLE = "pinehurst_scores";
-const EVENT_COURSE = 100, EVENT_TEAM = "sob";
+// ===== PIN for the Setup tab — change to your own =====
+const ADMIN_PIN = "1234";
+// ======================================================================
+const TABLE = "pinehurst_scores";     // scores
+const ROSTER = "event_players";       // players
+const SETTINGS = "event_settings";    // format
+const FORMATS = {
+  stableford: {label:"Stableford (net)",  short:"Individual net Stableford plus skins."},
+  net:        {label:"Stroke play (net)",  short:"Individual net stroke play plus skins."},
+  gross:      {label:"Stroke play (gross)",short:"Individual gross stroke play plus skins."},
+};
+const EVENT = "sob", EVENT_COURSE = 100, EVENT_TEAM = "sob";
 
-const PLAYERS = [
-  {n:"Dwayne Hobbs",     tee:"Green", h:9},
-  {n:"Kenny Hobbs",      tee:"White", h:10},
-  {n:"Brent Myers",      tee:"White", h:13},
-  {n:"Fred Port",        tee:"White", h:6},
-  {n:"Tony Schmits",     tee:"White", h:13},
-  {n:"Ron Pegg",         tee:"Green", h:13},
-  {n:"Graham Fletcher",  tee:"Blue",  h:9},
-  {n:"Eric Nettleton",   tee:"Blue",  h:11},
-  {n:"Brenden Belesky",  tee:"Blue",  h:5},
-  {n:"John Kaufman",     tee:"White", h:5},
-  {n:"Jim Southcomb",    tee:"Gold",  h:14},
-  {n:"Larry Panfalone",  tee:"Green", h:13},
-  {n:"Brian Tuttle",     tee:"White", h:12},
-  {n:"Papa Groft",       tee:"Green", h:20},
-  {n:"Jon Faber",        tee:"White", h:7},
-  {n:"Scott Fletcher",   tee:"White", h:13},
-  {n:"Brian Krause",     tee:"Blue",  h:7},
-  {n:"Mike Shamrock",    tee:"Blue",  h:8},
-  {n:"Jon Haraldsson",   tee:"Blue",  h:7},
-];
+// Players live in Supabase and are managed in the Setup tab
+const DEFAULT_PLAYERS = [];
 
 // Braelinn CC scorecard, men's handicap row
 const PAR = [5,4,4,3,4,3,5,4,4, 5,3,4,4,3,4,4,5,4];
 const SI  = [1,5,9,17,15,11,13,3,7, 6,14,16,4,10,18,12,8,2];
-const YDS = {
-  Blue:  [533,403,343,169,335,176,493,385,378, 488,159,351,390,161,302,354,528,404],
-  White: [507,387,328,144,319,160,483,359,362, 478,144,320,374,152,287,339,512,388],
-  Green: [458,282,286,120,272,137,433,279,318, 446,128,275,318,130,240,297,439,335],
-  Gold:  [383,270,277,115,225,132,375,271,262, 384,124,263,312,125,229,237,430,299],
+const TEES = {
+  Black: {r:"71.8 / 134", y:[554,420,358,182,351,188,517,415,394, 512,174,380,406,184,317,369,544,420]},
+  Blue:  {r:"70.3 / 130", y:[533,403,343,169,335,176,493,385,378, 488,159,351,390,161,302,354,528,404]},
+  White: {r:"68.8 / 127", y:[507,387,328,144,319,160,483,359,362, 478,144,320,374,152,287,339,512,388]},
+  Green: {r:"65.0 / 119", y:[458,282,286,120,272,137,433,279,318, 446,128,275,318,130,240,297,439,335]},
+  Gold:  {r:"62.3 / 113", y:[383,270,277,115,225,132,375,271,262, 384,124,263,312,125,229,237,430,299]},
 };
-const RATING = {Blue:"70.3 / 130", White:"68.8 / 127", Green:"65.0 / 119", Gold:"62.3 / 113"};
+const TEE_NAMES = Object.keys(TEES);
 
 // Stableford: full handicap, hardest holes first, 2nd stroke over 18
 const strokesFull = (h, si) => Math.floor(h/18) + (si <= h % 18 ? 1 : 0);
 // Skins: capped at 18, so never more than one stroke a hole
 const strokesSkin = (h, si) => si <= Math.min(h, 18) ? 1 : 0;
 const POINTS = d => d <= -2 ? 4 : d === -1 ? 3 : d === 0 ? 2 : d === 1 ? 1 : 0;
+
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const teeBadge = t => `<span class="tee tee-${String(t).toLowerCase()}">${esc(t)}</span>`;
+const hcClass = h => h <= 9 ? "hc-lo" : h <= 15 ? "hc-mid" : "hc-hi";
 
 // Traditional scorecard marks, based on gross vs par
 function scClass(g, h){
@@ -281,48 +292,58 @@ function scClass(g, h){
 }
 const scMark = (g, h) => g === null ? "" : g === 0 ? "P" : `<span class="sc ${scClass(g,h)}">${g}</span>`;
 const LEGEND = `<div class="legend"><span><i class="sc eagle">3</i>Eagle+</span><span><i class="sc birdie">3</i>Birdie</span><span><i class="sc bogey">5</i>Bogey</span><span><i class="sc dbl">6</i>Double+</span></div>`;
-let openP = null;
-function miniCard(p){
-  const pl = PLAYERS[p];
-  const half = (a) => {
-    const hs = Array.from({length:9},(_,i)=>a+i);
-    return `<tr><th class="lbl">Hole</th>${hs.map(h=>`<th>${h+1}</th>`).join("")}</tr>
-      <tr><th class="lbl">Par</th>${hs.map(h=>`<th>${PAR[h]}</th>`).join("")}</tr>
-      <tr><td class="lbl">Score</td>${hs.map(h=>{const pts=holePts(p,h);return `<td class="${pts!==null&&pts>=3?"b":""}">${scMark(getS(p,h),h)}</td>`;}).join("")}</tr>
-      <tr><td class="lbl">Pts</td>${hs.map(h=>{const x=holePts(p,h);return `<td>${x===null?"":x}</td>`;}).join("")}</tr>`;
-  };
-  return `<div class="mini" role="region" aria-label="${pl.n} hole by hole"><table>${half(0)}</table><div style="height:8px"></div><table>${half(9)}</table></div>`;
-}
-const teeBadge = t => `<span class="tee tee-${t.toLowerCase()}">${t}</span>`;
-const hcClass = h => h <= 9 ? "hc-lo" : h <= 15 ? "hc-mid" : "hc-hi";
 
-// ---- state + live sync ----
-const LIVE = SUPABASE_URL.startsWith("https://") && !SUPABASE_KEY.startsWith("PASTE") && window.supabase;
-const KEY = LIVE ? "sob-sat-live-cache-v1" : "sob-sat-v1";
-let scores = {}; // scores[player][hole] = gross (0 = pickup)
-try { scores = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ scores = {}; }
-function save(){ try { localStorage.setItem(KEY, JSON.stringify(scores)); } catch(e){} }
+// ---- local storage helpers ----
+const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch(e){ return d; } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
+
+// ---- state ----
+const LIVE = SUPABASE_URL.startsWith("https://") && !SUPABASE_KEY.startsWith("PASTE") && !!window.supabase;
+const KEY = LIVE ? "sob-sat-live-cache-v2" : "sob-sat-v2";
+let scores = load(KEY, {});                 // scores[pid][hole] = gross (0 = pickup)
+let roster = load("sob-roster-v2", null) || DEFAULT_PLAYERS.map(p => ({...p, active:true}));
+let rosterState = LIVE ? "loading" : "local"; // loading | ok | empty | missing | local
+let group = load("sob-sat-group-v2", []);
+let picking = !group.length;
+let admin = load("sob-admin", false);
+let view = "board", hole = 0, openP = null;
+let fmt = load("sob-fmt", "stableford"); if(!FORMATS[fmt]) fmt = "stableford";
+const isSF = () => fmt === "stableford";
+const toPar = n => n === 0 ? "E" : (n > 0 ? "+" + n : String(n));
+let setupMsg = {test:"", clear:"", add:""};
+
+const saveScores = () => store(KEY, scores);
+const saveRosterLocal = () => store("sob-roster-v2", roster);
+const active = () => roster.filter(r => r.active).sort((a,b) => a.pid - b.pid);
+const byPid = pid => roster.find(r => r.pid === pid);
 const getS = (p,h) => scores?.[p]?.[h] ?? null;
+function shortName(pl){
+  const last = pl.n.trim().split(/\s+/).pop();
+  const dup = active().filter(x => x.n.trim().split(/\s+/).pop() === last).length > 1;
+  return last + (dup ? " " + pl.n.trim()[0] : "");
+}
+
+// ---- live sync: scores ----
 function applyLocal(p,h,v){
   scores[p] ??= {};
   if(v === null) delete scores[p][h]; else scores[p][h] = v;
-  save();
+  saveScores();
 }
 const pending = {};
 const pkey = (p,h) => p + "|" + h;
-function setS(p,h,v){
-  applyLocal(p,h,v);
-  if(!LIVE) return;
-  const k = pkey(p,h);
-  if(pending[k]) clearTimeout(pending[k].timer);
-  pending[k] = {v, timer: setTimeout(() => pushScore(p,h,v,k), 350)};
-}
 let db = null;
 function setStatus(state){
   const box = document.getElementById("sync");
   const text = {live:"Live — syncing all phones", connecting:"Connecting…", error:"Offline — retrying", local:"Device only — keys not added"}[state];
   box.className = "sync " + state;
   box.querySelector("span").textContent = text;
+}
+function setS(p,h,v){
+  applyLocal(p,h,v);
+  if(!LIVE) return;
+  const k = pkey(p,h);
+  if(pending[k]) clearTimeout(pending[k].timer);
+  pending[k] = {v, timer: setTimeout(() => pushScore(p,h,v,k), 350)};
 }
 async function pushScore(p,h,v,k){
   try{
@@ -335,15 +356,41 @@ async function pushScore(p,h,v,k){
     setStatus("live");
   }catch(e){
     setStatus("error");
-    pending[k].timer = setTimeout(() => pushScore(p,h,pending[k].v,k), 3000);
+    if(pending[k]) pending[k].timer = setTimeout(() => pushScore(p,h,pending[k].v,k), 3000);
   }
 }
+
+// ---- live sync: roster ----
+const fromRow = r => ({pid:r.pid, n:r.name, tee:r.tee, h:r.hcp, active:r.active});
+async function pushPlayer(pl){
+  saveRosterLocal();
+  if(!LIVE) return true;
+  const {error} = await db.from(ROSTER).upsert({event:EVENT, pid:pl.pid, name:pl.n, tee:pl.tee, hcp:pl.h, active:pl.active, updated_at:new Date().toISOString()});
+  if(error){ setupMsg.add = "Couldn’t save to the roster table. Run the roster setup SQL, then try again."; render(); return false; }
+  return true;
+}
+
+async function pushFormat(v){
+  fmt = v; store("sob-fmt", v); render();
+  if(!LIVE) return;
+  const {error} = await db.from(SETTINGS).upsert({event:EVENT, format:v, updated_at:new Date().toISOString()});
+  if(error){ setupMsg.fmt = "Couldn’t save the format. Run the setup SQL, then try again."; render(); }
+  else { setupMsg.fmt = ""; }
+}
 async function loadAll(){
-  const {data, error} = await db.from(TABLE).select("player,hole,gross").eq("course", EVENT_COURSE).eq("team", EVENT_TEAM);
-  if(error){ setStatus("error"); return; }
+  const st = await db.from(SETTINGS).select("format").eq("event", EVENT);
+  if(!st.error && st.data.length && FORMATS[st.data[0].format]){ fmt = st.data[0].format; store("sob-fmt", fmt); }
+  const [sc, ro] = await Promise.all([
+    db.from(TABLE).select("player,hole,gross").eq("course", EVENT_COURSE).eq("team", EVENT_TEAM),
+    db.from(ROSTER).select("pid,name,tee,hcp,active").eq("event", EVENT),
+  ]);
+  if(ro.error) rosterState = "missing";
+  else if(!ro.data.length){ roster = []; rosterState = "empty"; saveRosterLocal(); }
+  else { roster = ro.data.map(fromRow); rosterState = "ok"; saveRosterLocal(); }
+  if(sc.error){ setStatus("error"); render(); return; }
   const keep = Object.entries(pending).map(([k,x]) => [k.split("|"), x.v]);
   scores = {};
-  data.forEach(r => applyLocal(r.player, r.hole, r.gross));
+  sc.data.forEach(r => applyLocal(r.player, r.hole, r.gross));
   keep.forEach(([[p,h], v]) => applyLocal(+p, +h, v));
   setStatus("live");
   render();
@@ -352,15 +399,26 @@ function startSync(){
   if(!LIVE){ setStatus("local"); return; }
   setStatus("connecting");
   db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  db.channel("sob-saturday-scores")
+  db.channel("sob-saturday-live")
     .on("postgres_changes", {event:"*", schema:"public", table:TABLE}, payload => {
-      const del = payload.eventType === "DELETE";
-      const r = del ? payload.old : payload.new;
-      if(del){ loadAll(); return; } // delete payloads may lack course/team
+      if(payload.eventType === "DELETE"){ loadAll(); return; }
+      const r = payload.new;
       if(r.course !== EVENT_COURSE || r.team !== EVENT_TEAM) return;
       if(pending[pkey(r.player, r.hole)]) return;
       applyLocal(r.player, r.hole, r.gross);
       render();
+    })
+    .on("postgres_changes", {event:"*", schema:"public", table:SETTINGS}, payload => {
+      const r = payload.new;
+      if(!r || r.event !== EVENT || !FORMATS[r.format]) return;
+      fmt = r.format; store("sob-fmt", fmt); render();
+    })
+    .on("postgres_changes", {event:"*", schema:"public", table:ROSTER}, payload => {
+      const r = payload.new;
+      if(!r || r.event !== EVENT) return;
+      const pl = fromRow(r), i = roster.findIndex(x => x.pid === pl.pid);
+      if(i >= 0) roster[i] = pl; else roster.push(pl);
+      rosterState = "ok"; saveRosterLocal(); render();
     })
     .subscribe(status => {
       if(status === "SUBSCRIBED") loadAll();
@@ -372,75 +430,90 @@ function startSync(){
 
 // ---- scoring ----
 function holePts(p,h){
-  const g = getS(p,h);
-  if(g === null) return null;
+  const g = getS(p,h), pl = byPid(p);
+  if(g === null || !pl) return null;
   if(g === 0) return 0;
-  return POINTS(g - strokesFull(PLAYERS[p].h, SI[h]) - PAR[h]);
+  return POINTS(g - strokesFull(pl.h, SI[h]) - PAR[h]);
 }
 // Pickup counts as net double bogey for the gross total
-const grossFor = (p,h) => { const g = getS(p,h); return g === 0 ? PAR[h] + 2 + strokesFull(PLAYERS[p].h, SI[h]) : g; };
+const grossFor = (p,h) => { const g = getS(p,h); return g === 0 ? PAR[h] + 2 + strokesFull(byPid(p).h, SI[h]) : g; };
+const netFor = (p,h) => grossFor(p,h) - strokesFull(byPid(p).h, SI[h]);
 function summary(p){
-  let pts = 0, gross = 0, thru = 0, pu = 0;
+  let pts = 0, gross = 0, thru = 0, pu = 0, gtp = 0, ntp = 0;
   for(let h=0; h<18; h++){
     const g = getS(p,h); if(g === null) continue;
     thru++; pts += holePts(p,h); gross += grossFor(p,h); if(g === 0) pu++;
+    gtp += grossFor(p,h) - PAR[h]; ntp += netFor(p,h) - PAR[h];
   }
-  return {pts, gross, thru, pu};
+  return {pts, gross, thru, pu, gtp, ntp};
 }
-
-let view = "board", hole = 0;
-let group = [];
-try { group = JSON.parse(localStorage.getItem("sob-sat-group")) || []; } catch(e){ group = []; }
-let picking = !group.length;
-const saveGroup = () => { try { localStorage.setItem("sob-sat-group", JSON.stringify(group)); } catch(e){} };
+// What the leaderboard ranks on, and how it's shown
+const rankVal = r => isSF() ? -r.pts : fmt === "net" ? r.ntp : r.gtp;
+const mainVal = r => isSF() ? r.pts : toPar(fmt === "net" ? r.ntp : r.gtp);
+const mainHead = () => isSF() ? "Pts" : fmt === "net" ? "Net" : "Gross";
 
 const el = id => document.getElementById(id);
 
+function miniCard(p){
+  const pl = byPid(p);
+  const half = (a) => {
+    const hs = Array.from({length:9},(_,i)=>a+i);
+    return `<tr><th class="lbl">Hole</th>${hs.map(h=>`<th>${h+1}</th>`).join("")}</tr>
+      <tr><th class="lbl">Par</th>${hs.map(h=>`<th>${PAR[h]}</th>`).join("")}</tr>
+      <tr><td class="lbl">Score</td>${hs.map(h=>{const pts=holePts(p,h);return `<td class="${pts!==null&&pts>=3?"b":""}">${scMark(getS(p,h),h)}</td>`;}).join("")}</tr>
+      <tr><td class="lbl">${isSF() ? "Pts" : "Net"}</td>${hs.map(h=>{ if(getS(p,h)===null) return "<td></td>"; return `<td>${isSF() ? holePts(p,h) : netFor(p,h)}</td>`;}).join("")}</tr>`;
+  };
+  return `<div class="mini" role="region" aria-label="${esc(pl.n)} hole by hole"><table>${half(0)}</table><div style="height:8px"></div><table>${half(9)}</table></div>`;
+}
+
 function renderBoard(){
-  const rows = PLAYERS.map((pl,p) => ({p, pl, ...summary(p)}));
-  rows.sort((a,b) => b.pts - a.pts || b.thru - a.thru || a.pl.n.localeCompare(b.pl.n));
+  const rows = active().map(pl => ({p:pl.pid, pl, ...summary(pl.pid)}));
+  rows.sort((a,b) => (!!b.thru - !!a.thru) || rankVal(a) - rankVal(b) || b.thru - a.thru || a.pl.n.localeCompare(b.pl.n));
   const pos = rows.map(r => {
     if(!r.thru) return "";
-    const first = rows.findIndex(x => x.thru && x.pts === r.pts);
-    const tied = rows.filter(x => x.thru && x.pts === r.pts).length > 1;
+    const first = rows.findIndex(x => x.thru && rankVal(x) === rankVal(r));
+    const tied = rows.filter(x => x.thru && rankVal(x) === rankVal(r)).length > 1;
     return (tied ? "T" : "") + (first + 1);
   });
   const any = rows.some(r => r.thru);
   el("v-board").innerHTML = `
     <h2>Leaderboard</h2>
-    <p class="lede">Net Stableford at full handicap: eagle or better 4, birdie 3, par 2, bogey 1, double or worse 0. Most points wins. Tap a name for their card.</p>
+    <p class="lede">${isSF() ? "Net Stableford at full handicap: eagle or better 4, birdie 3, par 2, bogey 1, double or worse 0. Most points wins."
+      : fmt === "net" ? "Net stroke play at full handicap. Lowest net score to par wins."
+      : "Gross stroke play. Lowest score to par wins."} Tap a name for their card.</p>
     <div class="board" role="table" aria-label="Leaderboard">
-      <div class="board-row board-head" role="row"><div>Pos</div><div>Player</div><div>Gross</div><div>Hcp</div><div>Pts</div></div>
+      <div class="board-row board-head" role="row"><div>Pos</div><div>Player</div><div>Gross</div><div>Hcp</div><div>${mainHead()}</div></div>
       ${rows.map((r,i) => `
         <div class="board-row" role="row">
           <div class="pos">${pos[i] || "–"}</div>
           <div class="team-cell"><div style="min-width:0">
-            <div class="team-name"><button class="pname-btn" data-open="${r.p}" aria-expanded="${openP===r.p}">${r.pl.n}</button></div>
+            <div class="team-name"><button class="pname-btn" data-open="${r.p}" aria-expanded="${openP===r.p}">${esc(r.pl.n)}</button></div>
             <div class="thru">${teeBadge(r.pl.tee)} ${r.thru === 18 ? "Finished" : r.thru === 0 ? "Not started" : "Thru " + r.thru}</div></div></div>
           <div class="tile ${r.thru ? "" : "empty"}">${r.thru ? r.gross + (r.pu ? "*" : "") : "–"}</div>
           <div class="tile">${r.pl.h}</div>
-          <div class="tile net ${r.thru ? "" : "empty"}">${r.thru ? r.pts : "–"}</div>
+          <div class="tile net ${r.thru ? "" : "empty"}">${r.thru ? mainVal(r) : "–"}</div>
           ${openP === r.p ? miniCard(r.p) : ""}
         </div>`).join("")}
     </div>
-    <p class="board-note">${any ? "* Includes a pickup, counted as net double bogey in the gross total." : "No scores yet. Open Enter scores, pick your group and start posting holes."}</p>`;
+    <p class="board-note">${any ? "* Includes a pickup, counted as net double bogey." : "No scores yet. Open Enter scores, pick your group and start posting holes."}${!isSF() && any ? " Scores to par are for holes played so far." : ""}</p>`;
 }
 
 function renderEnter(){
-  if(picking){
+  const g = group.filter(pid => byPid(pid)?.active);
+  if(picking || !g.length){
     el("v-enter").innerHTML = `
       <h2>Pick your group</h2>
       <p class="lede">Choose the players you’re scoring for. This phone remembers them.</p>
       <div class="group-pick" role="group" aria-label="Players">
-        ${PLAYERS.map((pl,p) => `<button data-gp="${p}" aria-pressed="${group.includes(p)}">${pl.n}</button>`).join("")}
+        ${active().map(pl => `<button data-gp="${pl.pid}" aria-pressed="${group.includes(pl.pid)}">${esc(pl.n)}</button>`).join("")}
       </div>
-      <button class="go-btn" data-go="1" ${group.length ? "" : "disabled"}>Score ${group.length || ""} player${group.length === 1 ? "" : "s"}</button>`;
+      <button class="go-btn" data-go="1" ${g.length ? "" : "disabled"}>Score ${g.length || ""} player${g.length === 1 ? "" : "s"}</button>`;
     return;
   }
-  const doneHole = h => group.every(p => getS(p,h) !== null);
-  const holePtsSum = group.reduce((s,p) => s + (holePts(p,hole) ?? 0), 0);
+  const doneHole = h => g.every(p => getS(p,h) !== null);
+  const holePtsSum = g.reduce((s,p) => s + (holePts(p,hole) ?? 0), 0);
   el("v-enter").innerHTML = `
-    <div class="group-bar"><span>Scoring ${group.length} player${group.length === 1 ? "" : "s"}</span><button class="link-btn" data-pick="1">Change group</button></div>
+    <div class="group-bar"><span>Scoring ${g.length} player${g.length === 1 ? "" : "s"}</span><button class="link-btn" data-pick="1">Change group</button></div>
     <div class="hole-bar">
       <button class="arrow" data-step="-1" aria-label="Previous hole" ${hole===0?"disabled":""}>‹</button>
       <div class="hole-num" style="text-align:center">Hole ${hole+1}<small>Par ${PAR[hole]}, Hdcp ${SI[hole]}</small></div>
@@ -450,23 +523,23 @@ function renderEnter(){
       ${Array.from({length:18},(_,h) => `<button class="hs ${doneHole(h)?"done":""}" data-hole="${h}" aria-current="${h===hole}">${h+1}</button>`).join("")}
     </div>
     <div class="players">
-      ${group.map(p => {
-        const pl = PLAYERS[p], v = getS(p,hole), pts = holePts(p,hole);
+      ${g.map(p => {
+        const pl = byPid(p), v = getS(p,hole), pts = holePts(p,hole);
         const k = strokesFull(pl.h, SI[hole]), ks = strokesSkin(pl.h, SI[hole]);
         const meta = `${teeBadge(pl.tee)} Hcp ${pl.h}${k ? `, stroke${k>1?"s":""} ${'<span class="dot"></span>'.repeat(k)}` : ""}${k > ks ? " (1 for skins)" : ""}`;
         return `<div class="prow">
-          <div><div class="pname">${pl.n}</div><div class="pmeta">${meta}</div></div>
+          <div><div class="pname">${esc(pl.n)}</div><div class="pmeta">${meta}</div></div>
           <div class="stepper">
-            <button data-p="${p}" data-d="-1" aria-label="Lower ${pl.n} score">−</button>
-            <div class="score ${v===null?"blank":""} ${pts!==null&&pts>=3?"is-best":""}" aria-live="polite" aria-label="${pl.n} score">${v===null?"–":scMark(v,hole)}</div>
-            <button data-p="${p}" data-d="1" aria-label="Raise ${pl.n} score">+</button>
-            <div class="pts"><b>${pts===null?"–":pts}</b>pts</div>
+            <button data-p="${p}" data-d="-1" aria-label="Lower ${esc(pl.n)} score">−</button>
+            <div class="score ${v===null?"blank":""} ${pts!==null&&pts>=3?"is-best":""}" aria-live="polite" aria-label="${esc(pl.n)} score">${v===null?"–":scMark(v,hole)}</div>
+            <button data-p="${p}" data-d="1" aria-label="Raise ${esc(pl.n)} score">+</button>
+            <div class="pts">${isSF() ? `<b>${pts===null?"–":pts}</b>pts` : `<b>${v===null?"–":netFor(p,hole)}</b>net`}</div>
           </div>
         </div>`;
       }).join("")}
-      <div class="hole-total"><span>Group points on hole ${hole+1}</span><strong>${group.some(p => getS(p,hole)!==null) ? holePtsSum : "–"}</strong></div>
+      ${isSF() ? `<div class="hole-total"><span>Group points on hole ${hole+1}</span><strong>${g.some(p => getS(p,hole)!==null) ? holePtsSum : "–"}</strong></div>` : ""}
     </div>
-    <p class="hint">Enter gross scores. The first tap of + sets par. Go below 1 for a pickup (P, 0 points). Red dots show strokes on this hole; highlighted scores are net birdie or better.</p>
+    <p class="hint">Enter gross scores. The first tap of + sets par. Go below 1 for a pickup (P${isSF() ? ", 0 points" : ", counts as net double bogey"}). Red dots show strokes on this hole; highlighted scores are net birdie or better.</p>
     <button class="clear-btn" data-clear="1">Clear hole ${hole+1}</button>`;
 }
 
@@ -478,33 +551,34 @@ function renderCard(){
     ${LEGEND}
     <div class="scroll card"><table class="tbl">
       <thead>
-        <tr><th>Hole</th>${Array.from({length:18},(_,h)=>`<th class="${h===9?"out":""}"><button class="hs" style="border:0;background:none;padding:0" data-edit="${h}">${h+1}</button></th>`).join("")}<th class="out">Out</th><th>In</th><th>Tot</th><th>Pts</th></tr>
+        <tr><th>Hole</th>${Array.from({length:18},(_,h)=>`<th class="${h===9?"out":""}"><button class="hs" style="border:0;background:none;padding:0" data-edit="${h}">${h+1}</button></th>`).join("")}<th class="out">Out</th><th>In</th><th>Tot</th><th>${isSF() ? "Pts" : "Net"}</th></tr>
         <tr><th>Par</th>${PAR.map((x,h)=>`<th class="${h===9?"out":""}">${x}</th>`).join("")}<th class="out">36</th><th>36</th><th>72</th><th></th></tr>
         <tr><th>Hdcp</th>${SI.map((x,h)=>`<th class="${h===9?"out":""}">${x}</th>`).join("")}<th class="out"></th><th></th><th></th><th></th></tr>
       </thead>
       <tbody>
-        ${PLAYERS.map((pl,p) => {
-          const s = summary(p);
+        ${active().map(pl => {
+          const p = pl.pid, s = summary(p);
           const cells = Array.from({length:18},(_,h) => {
             const v = getS(p,h), pts = holePts(p,h), k = strokesFull(pl.h, SI[h]);
             return `<td class="${pts!==null&&pts>=3?"b":""} ${h===9?"out":""}">${scMark(v,h)}${k?`<sup>${"•".repeat(k)}</sup>`:""}</td>`;
           }).join("");
-          return `<tr><td>${pl.n.split(" ").slice(-1)[0]}${PLAYERS.filter(x=>x.n.split(" ").pop()===pl.n.split(" ").pop()).length>1?" "+pl.n[0]:""}</td>${cells}<td class="out strong">${sum(p,0,9)}</td><td class="strong">${sum(p,9,18)}</td><td class="strong">${s.thru===18?s.gross:""}</td><td class="strong">${s.thru?s.pts:""}</td></tr>`;
+          return `<tr><td>${esc(shortName(pl))}</td>${cells}<td class="out strong">${sum(p,0,9)}</td><td class="strong">${sum(p,9,18)}</td><td class="strong">${s.thru===18?s.gross:""}</td><td class="strong">${s.thru ? (isSF() ? s.pts : toPar(s.ntp)) : ""}</td></tr>`;
         }).join("")}
       </tbody>
     </table></div>`;
 }
 
 function skinsAll(){
+  const field = active();
   return Array.from({length:18}, (_,h) => {
     const entries = [];
-    PLAYERS.forEach((pl,p) => {
-      const g = getS(p,h);
+    field.forEach(pl => {
+      const g = getS(pl.pid,h);
       if(g === null || g === 0) return;
       const k = strokesSkin(pl.h, SI[h]);
-      entries.push({p, pl, g, k, adj: g - 0.5 * k});
+      entries.push({p:pl.pid, pl, g, k, adj: g - 0.5 * k});
     });
-    const done = PLAYERS.every((_,p) => getS(p,h) !== null);
+    const done = field.length > 0 && field.every(pl => getS(pl.pid,h) !== null);
     if(!entries.length) return {h, state: done ? "dead" : "none", lead:[]};
     const low = Math.min(...entries.map(e => e.adj));
     const lead = entries.filter(e => e.adj === low);
@@ -532,15 +606,15 @@ function renderSkins(){
         const hd = `<div class="skin-hole">${r.h+1}<small>Par ${PAR[r.h]}, Hdcp ${SI[r.h]}</small></div>`;
         if(r.state === "none") return `<div class="skin-row">${hd}<div class="skin-detail">No scores yet</div><span class="tag live">Open</span></div>`;
         const e = r.lead[0];
-        if(r.state === "won") return `<div class="skin-row">${hd}<div><div class="skin-who">${e.pl.n}</div><div class="skin-detail">${sc(e)}</div></div><span class="tag won">Skin</span></div>`;
-        if(r.state === "dead") return `<div class="skin-row">${hd}<div><div class="skin-who">Tied</div><div class="skin-detail">${r.lead.map(x => x.pl.n).join(", ") || "All pickups"}</div></div><span class="tag dead">No skin</span></div>`;
-        return `<div class="skin-row">${hd}<div><div class="skin-who">${r.lead.length === 1 ? e.pl.n : "Tied"}</div><div class="skin-detail">${r.lead.length === 1 ? sc(e) : r.lead.map(x => x.pl.n).join(", ")}, waiting on other groups</div></div><span class="tag live">Leading</span></div>`;
+        if(r.state === "won") return `<div class="skin-row">${hd}<div><div class="skin-who">${esc(e.pl.n)}</div><div class="skin-detail">${sc(e)}</div></div><span class="tag won">Skin</span></div>`;
+        if(r.state === "dead") return `<div class="skin-row">${hd}<div><div class="skin-who">Tied</div><div class="skin-detail">${r.lead.map(x => esc(x.pl.n)).join(", ") || "All pickups"}</div></div><span class="tag dead">No skin</span></div>`;
+        return `<div class="skin-row">${hd}<div><div class="skin-who">${r.lead.length === 1 ? esc(e.pl.n) : "Tied"}</div><div class="skin-detail">${r.lead.length === 1 ? sc(e) : r.lead.map(x => esc(x.pl.n)).join(", ")}, waiting on other groups</div></div><span class="tag live">Leading</span></div>`;
       }).join("")}
     </div>
     <h2>Skins by player</h2>
     ${rows.length ? `<div class="scroll"><table class="tbl">
       <thead><tr><th>Player</th><th>Holes</th><th>Skins</th></tr></thead>
-      <tbody>${rows.map(x => `<tr><td>${x.pl.n}</td><td>${x.holes.join(", ")}</td><td class="strong">${x.n}</td></tr>`).join("")}</tbody>
+      <tbody>${rows.map(x => `<tr><td>${esc(x.pl.n)}</td><td>${x.holes.join(", ")}</td><td class="strong">${x.n}</td></tr>`).join("")}</tbody>
     </table></div>` : `<p class="board-note">No skins won yet.</p>`}`;
 }
 
@@ -549,8 +623,8 @@ function strokeHoles(h){
   return `1 on every hole, 2 on Hdcp 1–${h - 18}`;
 }
 function renderHcp(){
-  const sorted = PLAYERS.map((pl,p)=>({pl,p})).sort((a,b) => a.pl.h - b.pl.h || a.pl.n.localeCompare(b.pl.n));
-  const yrow = (a,z) => Object.keys(YDS).map(t => YDS[t].slice(a,z).reduce((s,x)=>s+x,0));
+  const sorted = active().sort((a,b) => a.h - b.h || a.n.localeCompare(b.n));
+  const yrow = (a,z) => TEE_NAMES.map(t => TEES[t].y.slice(a,z).reduce((s,x)=>s+x,0));
   el("v-hcp").innerHTML = `
     <h2>Handicaps</h2>
     <div class="rules">
@@ -559,45 +633,214 @@ function renderHcp(){
     </div>
     <div class="scroll"><table class="tbl">
       <thead><tr><th>Player</th><th>Tees</th><th>Hcp</th><th>Stableford strokes</th><th>Skins strokes</th></tr></thead>
-      <tbody>${sorted.map(({pl}) => `<tr><td>${pl.n}</td><td>${teeBadge(pl.tee)}</td><td class="${hcClass(pl.h)}">${pl.h}</td><td>${strokeHoles(pl.h)}</td><td>${Math.min(pl.h,18)}</td></tr>`).join("")}</tbody>
+      <tbody>${sorted.map(pl => `<tr><td>${esc(pl.n)}</td><td>${teeBadge(pl.tee)}</td><td class="${hcClass(pl.h)}">${pl.h}</td><td>${strokeHoles(pl.h)}</td><td>${Math.min(pl.h,18)}</td></tr>`).join("")}</tbody>
     </table></div>
     <h2 style="margin-top:26px">Braelinn Country Club</h2>
-    <p class="lede">${Object.entries(RATING).map(([t,r]) => `${t} ${r}`).join(", ")} (rating / slope)</p>
+    <p class="lede">${TEE_NAMES.map(t => `${t} ${TEES[t].r}`).join(", ")} (rating / slope)</p>
     <div class="scroll card"><table class="tbl">
-      <thead><tr><th>Hole</th><th>Par</th><th>Hdcp</th>${Object.keys(YDS).map(t => `<th>${teeBadge(t)}</th>`).join("")}</tr></thead>
+      <thead><tr><th>Hole</th><th>Par</th><th>Hdcp</th>${TEE_NAMES.map(t => `<th>${teeBadge(t)}</th>`).join("")}</tr></thead>
       <tbody>
-        ${PAR.map((x,h) => `${h===9?`<tr class="sum"><td>Out</td><td>36</td><td></td>${yrow(0,9).map(v=>`<td>${v}</td>`).join("")}</tr>`:""}<tr><td>${h+1}</td><td>${x}</td><td>${SI[h]}</td>${Object.keys(YDS).map(t => `<td>${YDS[t][h]}</td>`).join("")}</tr>`).join("")}
+        ${PAR.map((x,h) => `${h===9?`<tr class="sum"><td>Out</td><td>36</td><td></td>${yrow(0,9).map(v=>`<td>${v}</td>`).join("")}</tr>`:""}<tr><td>${h+1}</td><td>${x}</td><td>${SI[h]}</td>${TEE_NAMES.map(t => `<td>${TEES[t].y[h]}</td>`).join("")}</tr>`).join("")}
         <tr class="sum"><td>In</td><td>36</td><td></td>${yrow(9,18).map(v=>`<td>${v}</td>`).join("")}</tr>
         <tr class="sum"><td>Total</td><td>72</td><td></td>${yrow(0,18).map(v=>`<td>${v}</td>`).join("")}</tr>
       </tbody>
     </table></div>`;
 }
 
-function render(){
-  document.querySelectorAll(".view-btn").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === view));
-  ["board","enter","card","skins","hcp"].forEach(v => el("v-"+v).hidden = v !== view);
-  ({board:renderBoard, enter:renderEnter, card:renderCard, skins:renderSkins, hcp:renderHcp})[view]();
+// ---- Setup tab ----
+const teeSelect = (val, attrs) => `<select ${attrs}>${TEE_NAMES.map(t => `<option ${t===val?"selected":""}>${t}</option>`).join("")}</select>`;
+function rosterNote(){
+  return {
+    local: `<p class="smsg bad">Device only: Supabase keys aren’t added, so roster changes stay on this phone.</p>`,
+    loading: `<p class="smsg">Loading roster…</p>`,
+    missing: `<p class="smsg bad">Roster table not found. Run the roster setup SQL in Supabase, then reload.</p>`,
+    empty: `<p class="smsg">No players yet. Add this week’s field below.</p>`,
+    ok: `<p class="smsg ok">Roster is live. Changes show on every phone.</p>`,
+  }[rosterState];
+}
+function renderSetup(){
+  if(!admin){
+    el("v-setup").innerHTML = `
+      <h2>Setup</h2>
+      <p class="lede">Enter the PIN to manage players and run checks.</p>
+      <div class="pin-box">
+        <input id="pin" type="password" inputmode="numeric" autocomplete="off" aria-label="PIN" placeholder="PIN">
+        <button class="sbtn primary" data-unlock="1">Unlock</button>
+      </div>
+      <p class="smsg bad" id="pin-msg"></p>`;
+    return;
+  }
+  const act = active(), gone = roster.filter(r => !r.active).sort((a,b) => a.n.localeCompare(b.n));
+  el("v-setup").innerHTML = `
+    <h2>Setup</h2>
+    ${rosterNote()}
+    <div class="setup-card">
+      <h3>Format</h3>
+      <div class="row-btns" role="group" aria-label="Format" style="margin-top:0">
+        ${Object.entries(FORMATS).map(([k,f]) => `<button class="sbtn ${fmt===k?"primary":""}" data-fmt="${k}" aria-pressed="${fmt===k}">${f.label}</button>`).join("")}
+      </div>
+      <p class="smsg">Changes the leaderboard on every phone right away. Skins stay the same in every format.</p>
+      ${setupMsg.fmt ? `<p class="smsg bad">${esc(setupMsg.fmt)}</p>` : ""}
+    </div>
+    <div class="setup-card">
+      <h3>Players (${act.length})</h3>
+      ${act.map(pl => `<div class="srow">
+        <input value="${esc(pl.n)}" data-f="n" data-pid="${pl.pid}" aria-label="Name">
+        ${teeSelect(pl.tee, `data-f="tee" data-pid="${pl.pid}" aria-label="${esc(pl.n)} tees"`)}
+        <input type="number" inputmode="numeric" min="0" max="54" value="${pl.h}" data-f="h" data-pid="${pl.pid}" aria-label="${esc(pl.n)} handicap">
+        <button class="icon-btn" data-remove="${pl.pid}" aria-label="Remove ${esc(pl.n)}">✕</button>
+      </div>`).join("")}
+      <p class="smsg">Changes save when you leave a box. Removing a player hides them; their scores stay saved.</p>
+    </div>
+    <div class="setup-card">
+      <h3>Add a player</h3>
+      <div class="srow" style="grid-template-columns:1fr 84px 58px">
+        <input id="add-n" placeholder="Name" aria-label="New player name">
+        ${teeSelect("White", `id="add-tee" aria-label="New player tees"`)}
+        <input id="add-h" type="number" inputmode="numeric" min="0" max="54" placeholder="Hcp" aria-label="New player handicap">
+      </div>
+      <div class="row-btns"><button class="sbtn primary" data-add="1">Add player</button></div>
+      ${setupMsg.add ? `<p class="smsg ${setupMsg.addOk ? "ok" : "bad"}">${esc(setupMsg.add)}</p>` : ""}
+    </div>
+    ${gone.length ? `<div class="setup-card">
+      <h3>Past players</h3>
+      <p class="smsg" style="margin:-4px 0 6px">Tap Restore to add someone back. Check their tee and Hcp after.</p>
+      ${gone.map(pl => `<div class="srow" style="grid-template-columns:1fr auto"><span>${esc(pl.n)} ${teeBadge(pl.tee)} ${pl.h}</span><button class="sbtn" data-restore="${pl.pid}">Restore</button></div>`).join("")}
+    </div>` : ""}
+    <div class="setup-card">
+      <h3>Each week</h3>
+      <p class="smsg" style="margin:-4px 0 6px">Start new week clears all scores and moves everyone to Past players, so you can add this week’s field.</p>
+      <div class="row-btns">
+        <button class="sbtn primary" data-test="1">Test sync</button>
+        <button class="sbtn danger" data-clearall="1">Clear all scores</button>
+        <button class="sbtn danger" data-newweek="1">Start new week</button>
+      </div>
+      ${setupMsg.test ? `<p class="smsg ${setupMsg.testOk ? "ok" : "bad"}">${esc(setupMsg.test)}</p>` : ""}
+      ${setupMsg.clear ? `<p class="smsg">${esc(setupMsg.clear)}</p>` : ""}
+    </div>
+    <div class="row-btns"><button class="sbtn" data-lock="1">Lock setup</button></div>`;
 }
 
-document.addEventListener("click", e => {
+async function testSync(){
+  setupMsg.test = "Testing…"; setupMsg.testOk = false; render();
+  if(!LIVE){ setupMsg.test = "Fail: Supabase keys aren’t added, so this page is device only."; render(); return; }
+  const row = {course:EVENT_COURSE, team:"sob-test", player:9999, hole:99};
+  try{
+    let r = await db.from(TABLE).upsert({...row, gross:4, updated_at:new Date().toISOString()});
+    if(r.error) throw new Error("score save failed: " + r.error.message);
+    r = await db.from(TABLE).select("gross").match(row);
+    if(r.error || !r.data.length || r.data[0].gross !== 4) throw new Error("score read-back failed");
+    r = await db.from(TABLE).delete().match(row);
+    if(r.error) throw new Error("score delete failed: " + r.error.message);
+    const ro = await db.from(ROSTER).select("pid").eq("event", EVENT);
+    if(ro.error) throw new Error("roster table not found");
+    setupMsg.test = `Pass: scores save, read back and delete. Roster has ${ro.data.length} players.`;
+    setupMsg.testOk = true;
+  }catch(e){
+    setupMsg.test = "Fail: " + e.message + ". Send Claude a screenshot.";
+  }
+  render();
+}
+async function newWeek(){
+  const typed = prompt("Start a new week? This deletes every score and moves all players to Past players. Type NEW to confirm.");
+  if(typed !== "NEW"){ setupMsg.clear = "Nothing changed."; render(); return; }
+  if(LIVE){
+    const del = await db.from(TABLE).delete().eq("course", EVENT_COURSE).eq("team", EVENT_TEAM);
+    if(del.error){ setupMsg.clear = "Couldn’t clear scores: " + del.error.message; render(); return; }
+    const off = await db.from(ROSTER).update({active:false, updated_at:new Date().toISOString()}).eq("event", EVENT).eq("active", true);
+    if(off.error){ setupMsg.clear = "Scores cleared, but couldn’t reset players: " + off.error.message; render(); return; }
+  }
+  scores = {}; saveScores();
+  roster.forEach(r => r.active = false); saveRosterLocal();
+  group = []; store("sob-sat-group-v2", group); picking = true; openP = null;
+  setupMsg.clear = "New week started. Add this week’s players above.";
+  render();
+}
+async function clearAll(){
+  const typed = prompt("This deletes every score for this event on all phones. Type CLEAR to confirm.");
+  if(typed !== "CLEAR"){ setupMsg.clear = "Nothing cleared."; render(); return; }
+  if(LIVE){
+    const {error} = await db.from(TABLE).delete().eq("course", EVENT_COURSE).eq("team", EVENT_TEAM);
+    if(error){ setupMsg.clear = "Couldn’t clear scores: " + error.message; render(); return; }
+  }
+  scores = {}; saveScores();
+  setupMsg.clear = "All scores cleared. Ready for a new round.";
+  render();
+}
+async function addPlayer(){
+  const n = el("add-n").value.trim(), tee = el("add-tee").value, h = parseInt(el("add-h").value, 10);
+  setupMsg.addOk = false;
+  if(!n){ setupMsg.add = "Enter a name."; render(); return; }
+  if(!Number.isInteger(h) || h < 0 || h > 54){ setupMsg.add = "Enter a handicap from 0 to 54."; render(); return; }
+  const old = roster.find(r => r.n.toLowerCase() === n.toLowerCase());
+  if(old && old.active){ setupMsg.add = `${n} is already on the list.`; render(); return; }
+  let pl;
+  if(old){ old.active = true; old.tee = tee; old.h = h; pl = old; }
+  else { pl = {pid: Math.max(-1, ...roster.map(r => r.pid), ...Object.keys(scores).map(Number)) + 1, n, tee, h, active:true}; roster.push(pl); }
+  if(await pushPlayer(pl)){ setupMsg.add = `Added ${n}.`; setupMsg.addOk = true; }
+  render();
+}
+
+// ---- render ----
+function render(){
+  // Don't redraw Setup while someone is typing in it
+  const f = document.activeElement;
+  if(view === "setup" && f && el("v-setup").contains(f) && (f.tagName === "INPUT" || f.tagName === "SELECT")) return;
+  el("subtitle").textContent = "Braelinn Country Club. " + FORMATS[fmt].short;
+  document.querySelectorAll(".view-btn").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === view));
+  ["board","enter","card","skins","hcp","setup"].forEach(v => el("v-"+v).hidden = v !== view);
+  ({board:renderBoard, enter:renderEnter, card:renderCard, skins:renderSkins, hcp:renderHcp, setup:renderSetup})[view]();
+}
+
+document.addEventListener("change", async e => {
+  const t = e.target; if(t.dataset.pid === undefined) return;
+  const pl = byPid(+t.dataset.pid); if(!pl) return;
+  if(t.dataset.f === "n"){ const v = t.value.trim(); if(!v){ t.value = pl.n; return; } pl.n = v; }
+  if(t.dataset.f === "tee") pl.tee = t.value;
+  if(t.dataset.f === "h"){ const v = parseInt(t.value, 10); if(!Number.isInteger(v) || v < 0 || v > 54){ t.value = pl.h; return; } pl.h = v; }
+  setupMsg.add = "";
+  await pushPlayer(pl);  // inputs already show the new value; other tabs redraw when opened
+});
+document.addEventListener("keydown", e => { if(e.key === "Enter" && e.target.id === "pin") document.querySelector("[data-unlock]")?.click(); });
+
+document.addEventListener("click", async e => {
   const b = e.target.closest("button"); if(!b) return;
   if(b.dataset.v){ view = b.dataset.v; render(); window.scrollTo(0,0); return; }
-  if(b.dataset.gp !== undefined){ const p = +b.dataset.gp; group = group.includes(p) ? group.filter(x => x !== p) : [...group, p]; saveGroup(); render(); return; }
   if(b.dataset.open !== undefined){ const p = +b.dataset.open; openP = openP === p ? null : p; render(); return; }
+  if(b.dataset.gp !== undefined){ const p = +b.dataset.gp; group = group.includes(p) ? group.filter(x => x !== p) : [...group, p]; store("sob-sat-group-v2", group); render(); return; }
   if(b.dataset.go){ picking = false; render(); return; }
   if(b.dataset.pick){ picking = true; render(); return; }
   if(b.dataset.step){ hole = Math.min(17, Math.max(0, hole + +b.dataset.step)); render(); return; }
   if(b.dataset.hole !== undefined){ hole = +b.dataset.hole; render(); return; }
-  if(b.dataset.edit !== undefined){ hole = +b.dataset.edit; view = "enter"; if(!group.length) picking = true; render(); window.scrollTo(0,0); return; }
-  if(b.dataset.clear){ group.forEach(p => setS(p,hole,null)); render(); return; }
+  if(b.dataset.edit !== undefined){ hole = +b.dataset.edit; view = "enter"; render(); window.scrollTo(0,0); return; }
+  if(b.dataset.clear){ group.filter(pid => byPid(pid)?.active).forEach(p => setS(p,hole,null)); render(); return; }
   if(b.dataset.p !== undefined){
     const p = +b.dataset.p, d = +b.dataset.d, cur = getS(p,hole);
     let next;
     if(cur === null) next = d > 0 ? PAR[hole] : null;
     else if(cur === 0) next = d > 0 ? 1 : null;
     else { next = cur + d; if(next > 12) next = 12; }
-    setS(p,hole,next); render();
+    setS(p,hole,next); render(); return;
   }
+  // Setup
+  if(b.dataset.unlock){
+    if(el("pin").value === ADMIN_PIN){ admin = true; store("sob-admin", true); render(); }
+    else el("pin-msg").textContent = "Wrong PIN.";
+    return;
+  }
+  if(b.dataset.lock){ admin = false; store("sob-admin", false); render(); return; }
+  if(b.dataset.add){ await addPlayer(); return; }
+  if(b.dataset.remove !== undefined){
+    const pl = byPid(+b.dataset.remove);
+    if(!confirm(`Remove ${pl.n}? Their scores stay saved and come back if you restore them.`)) return;
+    pl.active = false; if(openP === pl.pid) openP = null;
+    await pushPlayer(pl); render(); return;
+  }
+  if(b.dataset.restore !== undefined){ const pl = byPid(+b.dataset.restore); pl.active = true; await pushPlayer(pl); render(); return; }
+  if(b.dataset.test){ await testSync(); return; }
+  if(b.dataset.clearall){ await clearAll(); return; }
+  if(b.dataset.newweek){ await newWeek(); return; }
+  if(b.dataset.fmt){ await pushFormat(b.dataset.fmt); return; }
 });
 
 render();
