@@ -169,6 +169,9 @@ table{border-collapse:collapse;width:100%}
 .tee-white{background:linear-gradient(135deg,#ecf0f1,#bdc3c7);color:#1B2620}
 .tee-green{background:#D5F5E3;color:#1E8449;border:.5px solid #A9DFBF}
 .tee-gold{background:#FEF3C7;color:#92400E;border:.5px solid #FCD34D}
+.tee-silver{background:linear-gradient(135deg,#E5E7EB,#9CA3AF);color:#1F2937}
+.tee-purple{background:#EDE4F7;color:#6B3FA0;border:.5px solid #C9B3E6}
+.tee-red{background:#FDE2E1;color:#B3261E;border:.5px solid #F4B4B0}
 .hc-lo{color:#27ae60;font-weight:700}.hc-mid{color:#e67e22;font-weight:700}.hc-hi{color:#e74c3c;font-weight:700}
 .board-row{grid-template-columns:44px 1fr 54px 46px 58px}
 .group-pick{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:14px}
@@ -220,7 +223,7 @@ table{border-collapse:collapse;width:100%}
 </head>
 <body>
 <header>
-  <div class="title">SOB Saturday<small id="subtitle">Braelinn Country Club.</small></div>
+  <div class="title">SOB Saturday<small id="subtitle"></small></div>
   <div id="sync" class="sync" role="status"><i></i><span>Connecting…</span></div>
   <div style="height:14px"></div>
 </header>
@@ -262,17 +265,37 @@ const EVENT = "sob", EVENT_COURSE = 100, EVENT_TEAM = "sob";
 // Players live in Supabase and are managed in the Setup tab
 const DEFAULT_PLAYERS = [];
 
-// Braelinn CC scorecard, men's handicap row
-const PAR = [5,4,4,3,4,3,5,4,4, 5,3,4,4,3,4,4,5,4];
-const SI  = [1,5,9,17,15,11,13,3,7, 6,14,16,4,10,18,12,8,2];
-const TEES = {
-  Black: {r:"71.8 / 134", y:[554,420,358,182,351,188,517,415,394, 512,174,380,406,184,317,369,544,420]},
-  Blue:  {r:"70.3 / 130", y:[533,403,343,169,335,176,493,385,378, 488,159,351,390,161,302,354,528,404]},
-  White: {r:"68.8 / 127", y:[507,387,328,144,319,160,483,359,362, 478,144,320,374,152,287,339,512,388]},
-  Green: {r:"65.0 / 119", y:[458,282,286,120,272,137,433,279,318, 446,128,275,318,130,240,297,439,335]},
-  Gold:  {r:"62.3 / 113", y:[383,270,277,115,225,132,375,271,262, 384,124,263,312,125,229,237,430,299]},
-};
-const TEE_NAMES = Object.keys(TEES);
+// Club courses: par, men's hole handicaps, and each tee's men's rating, slope and yardages
+const COURSES = {"braelinn":{"name":"Braelinn","par":[5,4,4,3,4,3,5,4,4,5,3,4,4,3,4,4,5,4],"si":[1,5,9,17,15,11,13,3,7,6,14,16,4,10,18,12,8,2],"tees":{"Black":{"cr":71.8,"sl":134,"y":[554,420,358,182,351,188,517,415,394,512,174,380,406,184,317,369,544,420]},"Blue":{"cr":70.3,"sl":130,"y":[533,403,343,169,335,176,493,385,378,488,159,351,390,161,302,354,528,404]},"White":{"cr":68.8,"sl":127,"y":[507,387,328,144,319,160,483,359,362,478,144,320,374,152,287,339,512,388]},"Green":{"cr":65.0,"sl":119,"y":[458,282,286,120,272,137,433,279,318,446,128,275,318,130,240,297,439,335]},"Gold":{"cr":62.3,"sl":113,"y":[383,270,277,115,225,132,375,271,262,384,124,263,312,125,229,237,430,299]}}},"whiteoak_old":{"name":"White Oak Old","par":[4,5,3,4,5,4,4,3,4,4,5,3,4,5,3,4,4,4],"si":[5,11,13,1,15,17,7,9,3,6,2,14,8,18,10,12,16,4],"tees":{"Gold":{"cr":72.7,"sl":134,"y":[405,552,203,391,497,348,397,211,414,null,null,null,null,null,null,null,null,null]},"Blue":{"cr":70.8,"sl":130,"y":[387,537,177,366,485,319,372,181,391,378,511,160,393,492,152,364,318,373]},"White":{"cr":69.5,"sl":126,"y":[370,520,152,342,470,314,363,174,384,349,498,139,375,455,145,348,294,352]},"Silver":{"cr":66.9,"sl":119,"y":[351,470,126,342,393,314,299,148,320,308,420,139,316,441,124,287,294,323]},"Purple":{"cr":65.4,"sl":117,"y":[351,470,126,242,393,223,299,148,320,308,420,110,316,441,124,287,256,323]},"Green":{"cr":61.7,"sl":109,"y":[274,377,126,152,336,223,219,117,210,249,360,110,216,387,95,287,191,230]}}},"whiteoak_sem":{"name":"White Oak Seminole","par":[4,3,5,4,4,5,4,3,4,5,4,4,3,4,3,4,5,4],"si":[7,17,15,13,5,9,1,11,3,12,14,4,8,18,16,6,10,2],"tees":{"Gold":{"cr":71.6,"sl":133,"y":[398,169,481,369,390,523,390,196,401,523,338,331,179,333,169,380,553,416]},"Blue":{"cr":69.8,"sl":129,"y":[370,150,453,326,363,491,361,172,389,510,330,321,171,313,149,368,525,405]},"White":{"cr":68.7,"sl":123,"y":[351,141,418,314,349,466,336,162,377,500,312,311,148,307,143,356,493,393]},"Silver":{"cr":66.2,"sl":117,"y":[301,117,418,314,314,466,309,142,317,439,312,224,148,307,143,291,463,306]},"Purple":{"cr":64.1,"sl":112,"y":[301,117,351,226,314,394,309,142,317,439,258,224,101,245,127,291,463,306]},"Green":{"cr":61.7,"sl":104,"y":[301,117,325,226,255,394,273,80,247,376,217,149,101,240,90,222,347,272]}}},"canongate_lee":{"name":"Canongate Lee","par":[5,4,4,3,4,4,5,3,4,4,5,4,4,3,4,5,3,4],"si":[7,3,15,13,9,11,5,17,1,14,4,18,12,16,2,6,10,8],"tees":{"Gold":{"cr":71.8,"sl":132,"y":[541,431,370,178,364,341,497,164,433,389,508,311,385,176,402,550,200,406]},"Blue":{"cr":70.1,"sl":129,"y":[513,378,361,163,335,328,478,154,416,382,499,293,361,152,383,520,184,385]},"White":{"cr":67.8,"sl":122,"y":[430,363,331,148,310,311,463,144,399,361,477,270,314,144,373,500,168,363]},"Green":{"cr":65.1,"sl":113,"y":[386,314,319,133,304,303,376,134,338,318,402,265,303,136,322,421,131,324]}}},"canongate_roq":{"name":"Canongate Roquemore","par":[4,4,5,3,4,4,5,3,4,5,4,4,4,3,4,5,3,4],"si":[5,11,3,17,9,15,1,13,7,6,10,14,8,18,2,4,12,16],"tees":{"Gold":{"cr":71.6,"sl":131,"y":[411,325,564,144,362,368,517,159,401,532,376,379,350,157,422,519,233,322]},"Blue":{"cr":70.3,"sl":129,"y":[394,312,554,133,346,347,508,138,374,517,361,363,350,138,400,508,216,310]},"White":{"cr":69.0,"sl":125,"y":[376,293,524,113,330,330,499,129,349,501,347,347,350,120,380,497,198,298]},"Green":{"cr":66.3,"sl":119,"y":[321,275,448,111,324,286,449,117,289,440,325,334,326,110,345,434,155,291]}}},"whitewater":{"name":"Whitewater Creek","par":[4,4,3,5,4,5,3,4,4,4,3,5,4,3,5,3,4,5],"si":[1,5,11,7,17,13,9,15,3,4,16,2,6,18,8,14,12,10],"tees":{"Black":{"cr":73.7,"sl":144,"y":[449,400,202,538,343,534,195,381,415,418,158,479,407,174,516,166,381,515]},"Blue":{"cr":71.7,"sl":137,"y":[415,380,172,512,315,512,176,353,387,399,135,456,376,170,485,161,365,481]},"White":{"cr":69.7,"sl":130,"y":[388,362,161,476,294,495,166,309,365,364,117,438,358,140,440,128,325,448]},"Green":{"cr":67.6,"sl":122,"y":[365,310,123,426,270,464,145,297,344,314,106,406,340,105,363,112,280,439]},"Gold":{"cr":64.9,"sl":119,"y":[347,300,87,417,221,429,111,266,325,304,84,351,306,83,332,102,253,382]},"Red":{"cr":61.1,"sl":112,"y":[255,257,87,335,221,379,111,266,255,250,84,290,280,83,282,102,253,307]}}}};
+const NINES = {"homestead":{"name":"Homestead","par":[5,4,4,4,3,4,4,5,3],"rank":[4,8,1,5,7,6,2,3,9],"tees":{"Gold":{"cr":36.2,"sl":130,"y":[505,334,422,398,195,380,432,512,174]},"Blue":{"cr":35.7,"sl":128,"y":[492,324,404,381,174,367,415,499,156]},"White":{"cr":34.4,"sl":122,"y":[478,314,352,342,156,354,353,488,128]},"Green":{"cr":32.5,"sl":116,"y":[443,261,337,294,130,284,349,402,105]},"Silver":{"cr":31.4,"sl":110,"y":[373,255,301,268,96,259,284,368,99]}}},"oldmill":{"name":"Old Mill","par":[4,4,3,5,3,5,4,4,4],"rank":[8,6,9,2,5,3,7,4,1],"tees":{"Gold":{"cr":36.0,"sl":130,"y":[310,388,163,545,180,519,402,391,423]},"Blue":{"cr":35.2,"sl":128,"y":[283,367,155,533,167,500,373,381,400]},"White":{"cr":34.3,"sl":124,"y":[263,347,147,512,154,449,355,370,352]},"Green":{"cr":32.4,"sl":114,"y":[254,274,140,428,127,400,274,320,316]},"Silver":{"cr":31.3,"sl":108,"y":[172,266,133,394,118,368,249,287,286]}}},"graveyard":{"name":"Graveyard","par":[5,4,4,4,3,4,4,5,3],"rank":[2,1,8,5,9,6,4,3,7],"tees":{"Gold":{"cr":36.4,"sl":134,"y":[539,422,359,377,139,389,376,503,184]},"Blue":{"cr":35.1,"sl":130,"y":[518,377,334,364,131,376,357,466,174]},"White":{"cr":34.8,"sl":128,"y":[479,369,325,351,122,364,347,456,165]},"Green":{"cr":33.4,"sl":122,"y":[445,306,298,324,114,320,292,410,156]},"Silver":{"cr":31.9,"sl":114,"y":[356,289,271,304,107,296,219,360,122]}}}};
+const COURSE_ORDER = ["braelinn","whitewater","flatcreek","canongate_lee","canongate_roq","whiteoak_old","whiteoak_sem"];
+const courseName = k => k === "flatcreek" ? "Flatcreek" : COURSES[k].name;
+let PAR, SI, TEES, TEE_NAMES, COURSE_LABEL;
+function validCourse(c){
+  const ok = c && (COURSES[c.course] || c.course === "flatcreek");
+  const n = Object.keys(NINES);
+  const front = ok && NINES[c.front] ? c.front : "homestead";
+  let back = ok && NINES[c.back] ? c.back : "oldmill";
+  if(back === front) back = n.find(x => x !== front);
+  return {course: ok ? c.course : "braelinn", front, back};
+}
+// Flatcreek: front nine takes the odd hole handicaps, back nine the even ones
+function applyCourse(){
+  if(crs.course === "flatcreek"){
+    const F = NINES[crs.front], B = NINES[crs.back];
+    PAR = [...F.par, ...B.par];
+    SI = [...F.rank.map(r => 2*r - 1), ...B.rank.map(r => 2*r)];
+    TEES = {};
+    Object.keys(F.tees).filter(t => B.tees[t]).forEach(t => {
+      TEES[t] = {cr: Math.round((F.tees[t].cr + B.tees[t].cr) * 10) / 10, sl: Math.round((F.tees[t].sl + B.tees[t].sl) / 2), y: [...F.tees[t].y, ...B.tees[t].y]};
+    });
+    COURSE_LABEL = `Flatcreek: ${F.name} / ${B.name}`;
+  } else {
+    const c = COURSES[crs.course];
+    PAR = c.par; SI = c.si; TEES = c.tees; COURSE_LABEL = c.name;
+  }
+  TEE_NAMES = Object.keys(TEES);
+}
 
 // Stableford: full handicap, hardest holes first, 2nd stroke over 18
 const strokesFull = (h, si) => Math.floor(h/18) + (si <= h % 18 ? 1 : 0);
@@ -308,6 +331,7 @@ let picking = !group.length;
 let admin = load("sob-admin", false);
 let view = "board", hole = 0, openP = null;
 let fmt = load("sob-fmt", "stableford"); if(!FORMATS[fmt]) fmt = "stableford";
+let crs = validCourse(load("sob-course", null)); applyCourse();
 const isSF = () => fmt === "stableford";
 const toPar = n => n === 0 ? "E" : (n > 0 ? "+" + n : String(n));
 let setupMsg = {test:"", clear:"", add:""};
@@ -370,16 +394,21 @@ async function pushPlayer(pl){
   return true;
 }
 
-async function pushFormat(v){
-  fmt = v; store("sob-fmt", v); render();
+async function pushSettings(){
+  store("sob-fmt", fmt); store("sob-course", crs); applyCourse(); render();
   if(!LIVE) return;
-  const {error} = await db.from(SETTINGS).upsert({event:EVENT, format:v, updated_at:new Date().toISOString()});
-  if(error){ setupMsg.fmt = "Couldn’t save the format. Run the setup SQL, then try again."; render(); }
-  else { setupMsg.fmt = ""; }
+  const {error} = await db.from(SETTINGS).upsert({event:EVENT, format:fmt, course:crs.course, front:crs.front, back:crs.back, updated_at:new Date().toISOString()});
+  if(error){ setupMsg.fmt = "Couldn’t save to Supabase. Run the course setup SQL, then try again."; render(); }
+  else if(setupMsg.fmt){ setupMsg.fmt = ""; render(); }
+}
+async function pushFormat(v){ fmt = v; await pushSettings(); }
+function applySettingsRow(r){
+  if(FORMATS[r.format]){ fmt = r.format; store("sob-fmt", fmt); }
+  if(r.course){ crs = validCourse({course:r.course, front:r.front, back:r.back}); store("sob-course", crs); applyCourse(); }
 }
 async function loadAll(){
-  const st = await db.from(SETTINGS).select("format").eq("event", EVENT);
-  if(!st.error && st.data.length && FORMATS[st.data[0].format]){ fmt = st.data[0].format; store("sob-fmt", fmt); }
+  const st = await db.from(SETTINGS).select("*").eq("event", EVENT);
+  if(!st.error && st.data.length) applySettingsRow(st.data[0]);
   const [sc, ro] = await Promise.all([
     db.from(TABLE).select("player,hole,gross").eq("course", EVENT_COURSE).eq("team", EVENT_TEAM),
     db.from(ROSTER).select("pid,name,tee,hcp,active").eq("event", EVENT),
@@ -410,8 +439,8 @@ function startSync(){
     })
     .on("postgres_changes", {event:"*", schema:"public", table:SETTINGS}, payload => {
       const r = payload.new;
-      if(!r || r.event !== EVENT || !FORMATS[r.format]) return;
-      fmt = r.format; store("sob-fmt", fmt); render();
+      if(!r || r.event !== EVENT) return;
+      applySettingsRow(r); render();
     })
     .on("postgres_changes", {event:"*", schema:"public", table:ROSTER}, payload => {
       const r = payload.new;
@@ -624,7 +653,7 @@ function strokeHoles(h){
 }
 function renderHcp(){
   const sorted = active().sort((a,b) => a.h - b.h || a.n.localeCompare(b.n));
-  const yrow = (a,z) => TEE_NAMES.map(t => TEES[t].y.slice(a,z).reduce((s,x)=>s+x,0));
+  const yrow = (a,z) => TEE_NAMES.map(t => { const ys = TEES[t].y.slice(a,z); return ys.every(x => x) ? ys.reduce((s,x)=>s+x,0) : "–"; });
   el("v-hcp").innerHTML = `
     <h2>Handicaps</h2>
     <div class="rules">
@@ -635,12 +664,12 @@ function renderHcp(){
       <thead><tr><th>Player</th><th>Tees</th><th>Hcp</th><th>Stableford strokes</th><th>Skins strokes</th></tr></thead>
       <tbody>${sorted.map(pl => `<tr><td>${esc(pl.n)}</td><td>${teeBadge(pl.tee)}</td><td class="${hcClass(pl.h)}">${pl.h}</td><td>${strokeHoles(pl.h)}</td><td>${Math.min(pl.h,18)}</td></tr>`).join("")}</tbody>
     </table></div>
-    <h2 style="margin-top:26px">Braelinn Country Club</h2>
-    <p class="lede">${TEE_NAMES.map(t => `${t} ${TEES[t].r}`).join(", ")} (rating / slope)</p>
+    <h2 style="margin-top:26px">${esc(COURSE_LABEL)}</h2>
+    <p class="lede">${TEE_NAMES.map(t => `${t} ${TEES[t].cr.toFixed(1)} / ${TEES[t].sl}`).join(", ")} (men’s rating / slope)</p>
     <div class="scroll card"><table class="tbl">
       <thead><tr><th>Hole</th><th>Par</th><th>Hdcp</th>${TEE_NAMES.map(t => `<th>${teeBadge(t)}</th>`).join("")}</tr></thead>
       <tbody>
-        ${PAR.map((x,h) => `${h===9?`<tr class="sum"><td>Out</td><td>36</td><td></td>${yrow(0,9).map(v=>`<td>${v}</td>`).join("")}</tr>`:""}<tr><td>${h+1}</td><td>${x}</td><td>${SI[h]}</td>${TEE_NAMES.map(t => `<td>${TEES[t].y[h]}</td>`).join("")}</tr>`).join("")}
+        ${PAR.map((x,h) => `${h===9?`<tr class="sum"><td>Out</td><td>36</td><td></td>${yrow(0,9).map(v=>`<td>${v}</td>`).join("")}</tr>`:""}<tr><td>${h+1}</td><td>${x}</td><td>${SI[h]}</td>${TEE_NAMES.map(t => `<td>${TEES[t].y[h] ?? "–"}</td>`).join("")}</tr>`).join("")}
         <tr class="sum"><td>In</td><td>36</td><td></td>${yrow(9,18).map(v=>`<td>${v}</td>`).join("")}</tr>
         <tr class="sum"><td>Total</td><td>72</td><td></td>${yrow(0,18).map(v=>`<td>${v}</td>`).join("")}</tr>
       </tbody>
@@ -648,7 +677,10 @@ function renderHcp(){
 }
 
 // ---- Setup tab ----
-const teeSelect = (val, attrs) => `<select ${attrs}>${TEE_NAMES.map(t => `<option ${t===val?"selected":""}>${t}</option>`).join("")}</select>`;
+const teeSelect = (val, attrs) => {
+  const names = TEE_NAMES.includes(val) || !val ? TEE_NAMES : [...TEE_NAMES, val];
+  return `<select ${attrs}>${names.map(t => `<option value="${esc(t)}" ${t===val?"selected":""}>${esc(t)}${TEE_NAMES.includes(t) ? "" : " (not here)"}</option>`).join("")}</select>`;
+};
 function rosterNote(){
   return {
     local: `<p class="smsg bad">Device only: Supabase keys aren’t added, so roster changes stay on this phone.</p>`,
@@ -675,6 +707,16 @@ function renderSetup(){
     <h2>Setup</h2>
     ${rosterNote()}
     <div class="setup-card">
+      <h3>Course</h3>
+      <select data-set="course" aria-label="Course">${COURSE_ORDER.map(k => `<option value="${k}" ${crs.course===k?"selected":""}>${courseName(k)}</option>`).join("")}</select>
+      ${crs.course === "flatcreek" ? `<div class="srow" style="grid-template-columns:1fr 1fr;border:0;margin-top:6px">
+        <label style="font-size:13px;color:var(--muted)">Front nine<select data-set="front">${Object.entries(NINES).map(([k,n]) => `<option value="${k}" ${crs.front===k?"selected":""}>${n.name}</option>`).join("")}</select></label>
+        <label style="font-size:13px;color:var(--muted)">Back nine<select data-set="back">${Object.entries(NINES).map(([k,n]) => `<option value="${k}" ${crs.back===k?"selected":""}>${n.name}</option>`).join("")}</select></label>
+      </div>` : ""}
+      <p class="smsg">Tees here: ${TEE_NAMES.join(", ")}. Set this before the round; every phone switches together.</p>
+      ${act.some(pl => !TEE_NAMES.includes(pl.tee)) ? `<p class="smsg bad">Some players have tees this course doesn’t have. Update them below.</p>` : ""}
+    </div>
+    <div class="setup-card">
       <h3>Format</h3>
       <div class="row-btns" role="group" aria-label="Format" style="margin-top:0">
         ${Object.entries(FORMATS).map(([k,f]) => `<button class="sbtn ${fmt===k?"primary":""}" data-fmt="${k}" aria-pressed="${fmt===k}">${f.label}</button>`).join("")}
@@ -696,7 +738,7 @@ function renderSetup(){
       <h3>Add a player</h3>
       <div class="srow" style="grid-template-columns:1fr 84px 58px">
         <input id="add-n" placeholder="Name" aria-label="New player name">
-        ${teeSelect("White", `id="add-tee" aria-label="New player tees"`)}
+        ${teeSelect(TEE_NAMES.includes("White") ? "White" : TEE_NAMES[0], `id="add-tee" aria-label="New player tees"`)}
         <input id="add-h" type="number" inputmode="numeric" min="0" max="54" placeholder="Hcp" aria-label="New player handicap">
       </div>
       <div class="row-btns"><button class="sbtn primary" data-add="1">Add player</button></div>
@@ -786,14 +828,23 @@ function render(){
   // Don't redraw Setup while someone is typing in it
   const f = document.activeElement;
   if(view === "setup" && f && el("v-setup").contains(f) && (f.tagName === "INPUT" || f.tagName === "SELECT")) return;
-  el("subtitle").textContent = "Braelinn Country Club. " + FORMATS[fmt].short;
+  el("subtitle").textContent = COURSE_LABEL + ". " + FORMATS[fmt].short;
   document.querySelectorAll(".view-btn").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === view));
   ["board","enter","card","skins","hcp","setup"].forEach(v => el("v-"+v).hidden = v !== view);
   ({board:renderBoard, enter:renderEnter, card:renderCard, skins:renderSkins, hcp:renderHcp, setup:renderSetup})[view]();
 }
 
 document.addEventListener("change", async e => {
-  const t = e.target; if(t.dataset.pid === undefined) return;
+  const t = e.target;
+  if(t.dataset.set){
+    const k = t.dataset.set, v = t.value;
+    if(k === "course") crs.course = v;
+    if(k === "front"){ if(v === crs.back) crs.back = crs.front; crs.front = v; }
+    if(k === "back"){ if(v === crs.front) crs.front = crs.back; crs.back = v; }
+    crs = validCourse(crs);
+    t.blur(); await pushSettings(); return;
+  }
+  if(t.dataset.pid === undefined) return;
   const pl = byPid(+t.dataset.pid); if(!pl) return;
   if(t.dataset.f === "n"){ const v = t.value.trim(); if(!v){ t.value = pl.n; return; } pl.n = v; }
   if(t.dataset.f === "tee") pl.tee = t.value;
