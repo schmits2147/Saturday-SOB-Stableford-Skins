@@ -507,8 +507,8 @@ function renderBoard(){
   const any = rows.some(r => r.thru);
   el("v-board").innerHTML = `
     <h2>Leaderboard</h2>
-    <p class="lede">${isSF() ? "Net Stableford at full handicap: eagle or better 4, birdie 3, par 2, bogey 1, double or worse 0. Most points wins."
-      : fmt === "net" ? "Net stroke play at full handicap. Lowest net score to par wins."
+    <p class="lede">${isSF() ? "Net Stableford at your assigned handicap: eagle or better 4, birdie 3, par 2, bogey 1, double or worse 0. Most points wins."
+      : fmt === "net" ? "Net stroke play at your handicap. Lowest net score to par wins."
       : "Gross stroke play. Lowest score to par wins."} Tap a name for their card.</p>
     <div class="board" role="table" aria-label="Leaderboard">
       <div class="board-row board-head" role="row"><div>Pos</div><div>Player</div><div>Gross</div><div>Hcp</div><div>${mainHead()}</div></div>
@@ -657,7 +657,7 @@ function renderHcp(){
   el("v-hcp").innerHTML = `
     <h2>Handicaps</h2>
     <div class="rules">
-      <p>Stableford uses each player’s full handicap. Over 18 gets a second stroke on the hardest holes.</p>
+      <p>When playing Stableford or Stroke play uses each player’s assigned handicap. Over 18 gets a second stroke on the hardest holes.</p>
       <p>Skins cap strokes at 18, so one stroke a hole at most, worth 0.5.</p>
     </div>
     <div class="scroll"><table class="tbl">
