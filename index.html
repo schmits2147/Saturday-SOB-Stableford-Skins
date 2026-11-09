@@ -182,6 +182,25 @@ table{border-collapse:collapse;width:100%}
 .pts b{display:block;font-size:15px;color:var(--ink)}
 .card td sup{font-size:9px;color:var(--flag);margin-left:1px}
 .card td.b sup{color:inherit}
+.sc{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;box-sizing:border-box;line-height:1}
+.sc.birdie,.sc.eagle{border:1.5px solid currentColor;border-radius:50%}
+.sc.bogey,.sc.dbl{border:1.5px solid currentColor;border-radius:1px}
+.sc.eagle,.sc.dbl{outline:1.5px solid currentColor;outline-offset:1.5px}
+.card td .sc{margin:3px 1px}
+.score .sc{width:32px;height:32px}
+.score .sc.eagle,.score .sc.dbl{width:28px;height:28px;outline-offset:2px}
+.pname-btn{border:0;background:none;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.pname-btn::after{content:" \25BE";font-size:11px;color:var(--muted)}
+.pname-btn[aria-expanded="true"]::after{content:" \25B4"}
+.mini{grid-column:1/-1;padding:4px 6px 12px}
+.mini table{border-collapse:collapse;width:100%;font-size:12px;text-align:center}
+.mini th{font-weight:500;color:var(--muted);padding:2px 0}
+.mini td{padding:1px 0}
+.mini td.b{background:var(--sand-soft)}
+.mini .lbl{text-align:left;color:var(--muted);font-weight:500;padding-right:4px;width:34px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin:-4px 0 12px;align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .sc{width:18px;height:18px;font-size:10px;color:var(--ink);font-style:normal}
 </style>
 </head>
 <body>
@@ -219,14 +238,14 @@ const PLAYERS = [
   {n:"Dwayne Hobbs",     tee:"Green", h:9},
   {n:"Kenny Hobbs",      tee:"White", h:10},
   {n:"Brent Myers",      tee:"White", h:13},
-  {n:"Fred Port",        tee:"White", h:7},
+  {n:"Fred Port",        tee:"White", h:6},
   {n:"Tony Schmits",     tee:"White", h:13},
   {n:"Ron Pegg",         tee:"Green", h:13},
-  {n:"Graham Fletcher",  tee:"Blue",  h:7},
+  {n:"Graham Fletcher",  tee:"Blue",  h:9},
   {n:"Eric Nettleton",   tee:"Blue",  h:11},
   {n:"Brenden Belesky",  tee:"Blue",  h:5},
   {n:"John Kaufman",     tee:"White", h:5},
-  {n:"Jim Southcomb",    tee:"Gold",  h:13},
+  {n:"Jim Southcomb",    tee:"Gold",  h:14},
   {n:"Larry Panfalone",  tee:"Green", h:13},
   {n:"Brian Tuttle",     tee:"White", h:12},
   {n:"Papa Groft",       tee:"Green", h:20},
@@ -234,7 +253,7 @@ const PLAYERS = [
   {n:"Scott Fletcher",   tee:"White", h:13},
   {n:"Brian Krause",     tee:"Blue",  h:7},
   {n:"Mike Shamrock",    tee:"Blue",  h:8},
-  {n:"Jon Haraldsson",   tee:"White", h:5},
+  {n:"Jon Haraldsson",   tee:"Blue",  h:7},
 ];
 
 // Braelinn CC scorecard, men's handicap row
@@ -254,6 +273,26 @@ const strokesFull = (h, si) => Math.floor(h/18) + (si <= h % 18 ? 1 : 0);
 const strokesSkin = (h, si) => si <= Math.min(h, 18) ? 1 : 0;
 const POINTS = d => d <= -2 ? 4 : d === -1 ? 3 : d === 0 ? 2 : d === 1 ? 1 : 0;
 
+// Traditional scorecard marks, based on gross vs par
+function scClass(g, h){
+  if(g === null || g === 0) return "";
+  const d = g - PAR[h];
+  return d <= -2 ? "eagle" : d === -1 ? "birdie" : d === 0 ? "" : d === 1 ? "bogey" : "dbl";
+}
+const scMark = (g, h) => g === null ? "" : g === 0 ? "P" : `<span class="sc ${scClass(g,h)}">${g}</span>`;
+const LEGEND = `<div class="legend"><span><i class="sc eagle">3</i>Eagle+</span><span><i class="sc birdie">3</i>Birdie</span><span><i class="sc bogey">5</i>Bogey</span><span><i class="sc dbl">6</i>Double+</span></div>`;
+let openP = null;
+function miniCard(p){
+  const pl = PLAYERS[p];
+  const half = (a) => {
+    const hs = Array.from({length:9},(_,i)=>a+i);
+    return `<tr><th class="lbl">Hole</th>${hs.map(h=>`<th>${h+1}</th>`).join("")}</tr>
+      <tr><th class="lbl">Par</th>${hs.map(h=>`<th>${PAR[h]}</th>`).join("")}</tr>
+      <tr><td class="lbl">Score</td>${hs.map(h=>{const pts=holePts(p,h);return `<td class="${pts!==null&&pts>=3?"b":""}">${scMark(getS(p,h),h)}</td>`;}).join("")}</tr>
+      <tr><td class="lbl">Pts</td>${hs.map(h=>{const x=holePts(p,h);return `<td>${x===null?"":x}</td>`;}).join("")}</tr>`;
+  };
+  return `<div class="mini" role="region" aria-label="${pl.n} hole by hole"><table>${half(0)}</table><div style="height:8px"></div><table>${half(9)}</table></div>`;
+}
 const teeBadge = t => `<span class="tee tee-${t.toLowerCase()}">${t}</span>`;
 const hcClass = h => h <= 9 ? "hc-lo" : h <= 15 ? "hc-mid" : "hc-hi";
 
@@ -369,18 +408,19 @@ function renderBoard(){
   const any = rows.some(r => r.thru);
   el("v-board").innerHTML = `
     <h2>Leaderboard</h2>
-    <p class="lede">Net Stableford at full handicap: eagle or better 4, birdie 3, par 2, bogey 1, double or worse 0. Most points wins.</p>
+    <p class="lede">Net Stableford at full handicap: eagle or better 4, birdie 3, par 2, bogey 1, double or worse 0. Most points wins. Tap a name for their card.</p>
     <div class="board" role="table" aria-label="Leaderboard">
       <div class="board-row board-head" role="row"><div>Pos</div><div>Player</div><div>Gross</div><div>Hcp</div><div>Pts</div></div>
       ${rows.map((r,i) => `
         <div class="board-row" role="row">
           <div class="pos">${pos[i] || "–"}</div>
           <div class="team-cell"><div style="min-width:0">
-            <div class="team-name">${r.pl.n}</div>
+            <div class="team-name"><button class="pname-btn" data-open="${r.p}" aria-expanded="${openP===r.p}">${r.pl.n}</button></div>
             <div class="thru">${teeBadge(r.pl.tee)} ${r.thru === 18 ? "Finished" : r.thru === 0 ? "Not started" : "Thru " + r.thru}</div></div></div>
           <div class="tile ${r.thru ? "" : "empty"}">${r.thru ? r.gross + (r.pu ? "*" : "") : "–"}</div>
           <div class="tile">${r.pl.h}</div>
           <div class="tile net ${r.thru ? "" : "empty"}">${r.thru ? r.pts : "–"}</div>
+          ${openP === r.p ? miniCard(r.p) : ""}
         </div>`).join("")}
     </div>
     <p class="board-note">${any ? "* Includes a pickup, counted as net double bogey in the gross total." : "No scores yet. Open Enter scores, pick your group and start posting holes."}</p>`;
@@ -418,7 +458,7 @@ function renderEnter(){
           <div><div class="pname">${pl.n}</div><div class="pmeta">${meta}</div></div>
           <div class="stepper">
             <button data-p="${p}" data-d="-1" aria-label="Lower ${pl.n} score">−</button>
-            <div class="score ${v===null?"blank":""} ${pts!==null&&pts>=3?"is-best":""}" aria-live="polite" aria-label="${pl.n} score">${v===null?"–":v===0?"P":v}</div>
+            <div class="score ${v===null?"blank":""} ${pts!==null&&pts>=3?"is-best":""}" aria-live="polite" aria-label="${pl.n} score">${v===null?"–":scMark(v,hole)}</div>
             <button data-p="${p}" data-d="1" aria-label="Raise ${pl.n} score">+</button>
             <div class="pts"><b>${pts===null?"–":pts}</b>pts</div>
           </div>
@@ -434,7 +474,8 @@ function renderCard(){
   const sum = (p,a,z) => { let s = 0; for(let h=a; h<z; h++){ if(getS(p,h)===null) return ""; s += grossFor(p,h); } return s; };
   el("v-card").innerHTML = `
     <h2>Scorecard</h2>
-    <p class="lede">Gross scores. Red marks show strokes received; highlighted cells are net birdie or better. Tap a hole number to edit it.</p>
+    <p class="lede">Gross scores marked against par. Red dots show strokes received; shaded cells are net birdie or better. Tap a hole number to edit it.</p>
+    ${LEGEND}
     <div class="scroll card"><table class="tbl">
       <thead>
         <tr><th>Hole</th>${Array.from({length:18},(_,h)=>`<th class="${h===9?"out":""}"><button class="hs" style="border:0;background:none;padding:0" data-edit="${h}">${h+1}</button></th>`).join("")}<th class="out">Out</th><th>In</th><th>Tot</th><th>Pts</th></tr>
@@ -446,9 +487,9 @@ function renderCard(){
           const s = summary(p);
           const cells = Array.from({length:18},(_,h) => {
             const v = getS(p,h), pts = holePts(p,h), k = strokesFull(pl.h, SI[h]);
-            return `<td class="${pts!==null&&pts>=3?"b":""} ${h===9?"out":""}">${v===null?"":v===0?"P":v}${k?`<sup>${"•".repeat(k)}</sup>`:""}</td>`;
+            return `<td class="${pts!==null&&pts>=3?"b":""} ${h===9?"out":""}">${scMark(v,h)}${k?`<sup>${"•".repeat(k)}</sup>`:""}</td>`;
           }).join("");
-          return `<tr><td>${pl.n.split(" ").slice(-1)[0]}${pl.n==="Graham Fletcher"?" G":pl.n==="Scott Fletcher"?" S":pl.n==="Kenny Hobbs"?" K":pl.n==="Dwayne Hobbs"?" D":""}</td>${cells}<td class="out strong">${sum(p,0,9)}</td><td class="strong">${sum(p,9,18)}</td><td class="strong">${s.thru===18?s.gross:""}</td><td class="strong">${s.thru?s.pts:""}</td></tr>`;
+          return `<tr><td>${pl.n.split(" ").slice(-1)[0]}${PLAYERS.filter(x=>x.n.split(" ").pop()===pl.n.split(" ").pop()).length>1?" "+pl.n[0]:""}</td>${cells}<td class="out strong">${sum(p,0,9)}</td><td class="strong">${sum(p,9,18)}</td><td class="strong">${s.thru===18?s.gross:""}</td><td class="strong">${s.thru?s.pts:""}</td></tr>`;
         }).join("")}
       </tbody>
     </table></div>`;
@@ -542,6 +583,7 @@ document.addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
   if(b.dataset.v){ view = b.dataset.v; render(); window.scrollTo(0,0); return; }
   if(b.dataset.gp !== undefined){ const p = +b.dataset.gp; group = group.includes(p) ? group.filter(x => x !== p) : [...group, p]; saveGroup(); render(); return; }
+  if(b.dataset.open !== undefined){ const p = +b.dataset.open; openP = openP === p ? null : p; render(); return; }
   if(b.dataset.go){ picking = false; render(); return; }
   if(b.dataset.pick){ picking = true; render(); return; }
   if(b.dataset.step){ hole = Math.min(17, Math.max(0, hole + +b.dataset.step)); render(); return; }
