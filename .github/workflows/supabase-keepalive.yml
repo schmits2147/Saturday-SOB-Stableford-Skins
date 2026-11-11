@@ -1,0 +1,22 @@
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: "17 14 * * 1,4"   # Mondays and Thursdays, 14:17 UTC
+  workflow_dispatch:           # adds a "Run workflow" button for testing
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read from Supabase
+        run: |
+          URL="https://skqixupmbhqoxruhimwx.supabase.co"
+          KEY="sb_publishable_fvbUP_gX-XEWG7cFi8WwPg_mKKF_AK4"
+          for T in pinehurst_scores event_players; do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              "$URL/rest/v1/$T?select=*&limit=1" \
+              -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+            echo "$T -> HTTP $CODE"
+            if [ "$CODE" != "200" ]; then exit 1; fi
+          done
